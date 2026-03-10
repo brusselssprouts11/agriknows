@@ -19,16 +19,14 @@ RUN composer install --no-dev --optimize-autoloader
 # Create SQLite database file
 RUN touch /var/www/database/database.sqlite
 
-# Laravel setup
-RUN php artisan config:clear && \
-    php artisan config:cache && \
-    php artisan route:clear && \
-    php artisan view:clear && \
-    php artisan migrate --force
+# Set permissions BEFORE artisan commands
+RUN chown -R www-data:www-data /var/www \
+    && chmod -R 775 /var/www/storage /var/www/bootstrap/cache /var/www/database
 
-# Set permissions
-RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache /var/www/database && \
-    chmod -R 775 /var/www/storage /var/www/bootstrap/cache /var/www/database
+# Clear caches only — NO config:cache (it would bake in localhost values)
+RUN php artisan config:clear \
+    && php artisan route:clear \
+    && php artisan view:clear
 
 # Nginx config
 RUN echo 'server { \n\
@@ -48,5 +46,5 @@ RUN echo 'server { \n\
 
 EXPOSE 10000
 
-# Start nginx + php-fpm
-CMD service nginx start && php-fpm
+# Run migrations at runtime then start nginx + php-fpm
+CMD php artisan migrate --force && service nginx start && php-fpm
