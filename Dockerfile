@@ -16,14 +16,18 @@ COPY . .
 # Install PHP dependencies
 RUN composer install --no-dev --optimize-autoloader
 
+# Create SQLite database file
+RUN touch /var/www/database/database.sqlite
+
 # Laravel setup
 RUN php artisan config:clear && \
     php artisan route:clear && \
-    php artisan view:clear
+    php artisan view:clear && \
+    php artisan migrate --force
 
 # Set permissions
-RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache && \
-    chmod -R 775 /var/www/storage /var/www/bootstrap/cache
+RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache /var/www/database && \
+    chmod -R 775 /var/www/storage /var/www/bootstrap/cache /var/www/database
 
 # Nginx config
 RUN echo 'server { \n\
