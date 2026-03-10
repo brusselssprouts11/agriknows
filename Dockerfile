@@ -19,30 +19,41 @@ RUN composer install --no-dev --optimize-autoloader
 # Create SQLite database file
 RUN touch /var/www/database/database.sqlite
 
-# Set permissions BEFORE artisan commands
+# Set permissions
 RUN chown -R www-data:www-data /var/www \
     && chmod -R 775 /var/www/storage /var/www/bootstrap/cache /var/www/database
 
-# Clear caches only — NO config:cache (it would bake in localhost values)
+# Clear caches only
 RUN php artisan config:clear \
     && php artisan route:clear \
     && php artisan view:clear
 
-# Nginx config
-RUN echo 'server { \n\
-    listen 10000; \n\
-    root /var/www/public; \n\
-    index index.php; \n\
-    location / { \n\
-        try_files $uri $uri/ /index.php?$query_string; \n\
-    } \n\
-    location ~ \.php$ { \n\
-        fastcgi_pass 127.0.0.1:9000; \n\
-        fastcgi_index index.php; \n\
-        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name; \n\
-        include fastcgi_params; \n\
-    } \n\
-}' > /etc/nginx/sites-available/default
+# Nginx config — properly serve static files
+RUN cat > /etc/nginx/sites-available/default << 'NGINX'
+server {
+    listen 10000;
+    root /var/www/public;
+    index index.php index.html;
+
+    # Serve static files directly (CSS, JS, images)
+    location ~* \.(css|js|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+        expires max;
+        add_header Cache-Control "public, immutable";
+        try_files $uri =404;
+    }
+
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    location ~ \.php$ {
+        fastcgi_pass 127.0.0.1:9000;
+        fastcgi_index index.php;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        include fastcgi_params;
+    }
+}
+NGINX
 
 EXPOSE 10000
 
