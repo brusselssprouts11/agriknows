@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: agriknows
+    runtime: docker
+    plan: free
+    envVars:
+      - key: APP_NAME
+        value: AgriKnows
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: false
+      - key: APP_KEY
+        generateValue: true
+      - key: SESSION_DRIVER
+        value: cookie
+      - key: CACHE_DRIVER
+        value: file
+      - key: LOG_CHANNEL
+        value: stderr
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
