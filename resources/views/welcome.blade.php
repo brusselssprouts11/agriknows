@@ -10,33 +10,180 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
     <style>
-        /* ── Device Manager Button ── */
-        .device-btn {
+        /* ── Device Badge (header button) ── */
+        #addDeviceBtn {
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            padding: 6px 12px;
+            padding: 7px 14px;
             background: #d8f3dc;
             color: #2d6a4f;
             border: 1.5px solid #52b788;
             border-radius: 20px;
             font-size: 12px;
             font-weight: 600;
+            font-family: inherit;
             cursor: pointer;
-            transition: all 0.2s;
-            margin-right: 8px;
+            transition: all 0.2s ease;
+            white-space: nowrap;
         }
-        .device-btn:hover {
+        #addDeviceBtn:hover {
             background: #52b788;
             color: white;
         }
-        .device-btn i {
+        #addDeviceBtn i {
             font-size: 13px;
         }
-        #deviceBadge {
-            font-family: monospace;
-            font-size: 11px;
+
+        /* ── Device Modal Overrides ── */
+        #deviceModal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1100;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
         }
+        #deviceModal .modal-content {
+            background: #fff;
+            border-radius: 14px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.18);
+            width: 100%;
+            max-width: 420px;
+            padding: 28px 28px 24px;
+            position: relative;
+        }
+        #deviceModal .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            gap: 10px;
+        }
+        #deviceModal .modal-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #1b4332;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        #closeDeviceModal {
+            background: none;
+            border: none;
+            font-size: 1.4rem;
+            cursor: pointer;
+            color: #6b7280;
+            line-height: 1;
+            padding: 0;
+            flex-shrink: 0;
+        }
+        #closeDeviceModal:hover { color: #111; }
+
+        /* Connected status box */
+        #currentDeviceStatus {
+            background: #d8f3dc;
+            border: 1.5px solid #b7e4c7;
+            border-radius: 10px;
+            padding: 14px 16px;
+            margin-bottom: 16px;
+            display: none;
+        }
+        #currentDeviceStatus .device-status-title {
+            font-weight: 700;
+            color: #2d6a4f;
+            margin-bottom: 10px;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        #currentDeviceStatus .device-status-row {
+            display: flex;
+            gap: 6px;
+            font-size: 0.88rem;
+            color: #374151;
+            margin-bottom: 4px;
+        }
+        #currentDeviceStatus .device-status-row b {
+            color: #1b4332;
+            min-width: 80px;
+        }
+        #currentDeviceStatus .device-status-row span {
+            font-family: monospace;
+            color: #1b4332;
+            word-break: break-all;
+        }
+
+        /* Connect form */
+        #connectDeviceSection p.hint-text {
+            color: #6b7280;
+            font-size: 0.85rem;
+            margin-bottom: 16px;
+            line-height: 1.5;
+        }
+        #connectDeviceSection .optional-label {
+            color: #9ca3af;
+            font-weight: 400;
+            font-size: 0.8rem;
+            margin-left: 4px;
+        }
+
+        /* Error message */
+        #deviceErrorMsg {
+            display: none;
+            color: #c0392b;
+            font-size: 0.82rem;
+            margin-bottom: 10px;
+            padding: 8px 10px;
+            background: #fef2f2;
+            border-radius: 6px;
+            border-left: 3px solid #c0392b;
+        }
+
+        /* Confirm / disconnect buttons */
+        #confirmDeviceBtn {
+            width: 100%;
+            margin-top: 8px;
+            padding: 11px;
+            background: #2e7d32;
+            color: #fff;
+            border: none;
+            border-radius: 9px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: background 0.2s;
+        }
+        #confirmDeviceBtn:hover { background: #1b5e20; }
+        #confirmDeviceBtn:disabled { background: #9ca3af; cursor: not-allowed; }
+
+        #removeDeviceBtn {
+            display: none;
+            width: 100%;
+            margin-top: 10px;
+            padding: 11px;
+            background: #fee2e2;
+            color: #c0392b;
+            border: 1.5px solid #fca5a5;
+            border-radius: 9px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+        #removeDeviceBtn:hover { background: #c0392b; color: #fff; border-color: #c0392b; }
     </style>
 </head>
 <body>
@@ -55,17 +202,18 @@
             @endphp
 
             <div class="header-right">
-                <div style="text-align: right; margin-right: 10px;">
-                    <div>{{ $displayName }}</div>
-                    <small>{{ $displayEmail }}</small>
+                <div style="text-align: right; margin-right: 10px; line-height: 1.4;">
+                    <div style="font-size: 0.95rem; font-weight: 600; color: #2d6a4f;">{{ $displayName }}</div>
+                    <small style="color: #6b7280; font-size: 0.78rem;">{{ $displayEmail }}</small>
                 </div>
                 <div class="header-icons">
-                    <!-- ✅ NEW: Device Badge Button -->
-                    <button id="addDeviceBtn" class="device-btn" type="button" title="I-manage ang iyong device">
+                    <!-- Device Badge Button -->
+                    <button id="addDeviceBtn" type="button" title="I-manage ang iyong device">
                         <i class="fas fa-microchip"></i>
-                        <span id="deviceBadge">Walang device</span>
+                        <span id="deviceBadge">Device</span>
                     </button>
 
+                    <!-- Notification Bell -->
                     <button id="notificationBell" class="notif-bell-btn" type="button" aria-label="Notifications">
                         <i class="fas fa-bell"></i>
                         <span id="notificationBadge" class="notif-badge hidden">0</span>
@@ -78,55 +226,72 @@
                             <li class="notif-empty">Wala pang notifications.</li>
                         </ul>
                     </div>
+
+                    <!-- Profile -->
                     <img src="{{ asset('images/profile.png') }}" class="user-profile" alt="User Profile"
                         onclick="window.location.href='{{ url('/user-setting') }}'">
                 </div>
             </div>
         </header>
 
-        <!-- ✅ NEW: Device Manager Modal -->
-        <div id="deviceModal" class="modal" style="display:none;">
-            <div class="modal-content" style="max-width:440px;">
+        <!-- ══════════════ DEVICE MANAGER MODAL ══════════════ -->
+        <div id="deviceModal">
+            <div class="modal-content">
                 <div class="modal-header">
-                    <h3 class="modal-title"><i class="fas fa-microchip"></i> I-manage ang Device</h3>
-                    <button class="close-modal" id="closeDeviceModal">&times;</button>
+                    <span class="modal-title">
+                        <i class="fas fa-microchip"></i> I-manage ang Device
+                    </span>
+                    <button id="closeDeviceModal" type="button" aria-label="Close">&times;</button>
                 </div>
 
-                <!-- Connected device info (shown if may device na) -->
-                <div id="currentDeviceStatus" style="display:none; background:#d8f3dc; border-radius:8px; padding:16px; margin-bottom:16px;">
-                    <p style="font-weight:600; margin-bottom:8px; color:#2d6a4f;"><i class="fas fa-check-circle"></i> Naka-connect na ang Device</p>
-                    <p style="margin-bottom:4px;"><b>Device ID:</b> <span id="connectedDeviceId" style="font-family:monospace; color:#1b4332;"></span></p>
-                    <p style="margin-bottom:4px;"><b>Location:</b> <span id="connectedDeviceLocation"></span></p>
-                    <p><b>Na-connect:</b> <span id="connectedDeviceDate"></span></p>
+                <!-- Connected device info -->
+                <div id="currentDeviceStatus">
+                    <div class="device-status-title">
+                        <i class="fas fa-check-circle" style="color:#2d6a4f;"></i>
+                        Naka-connect na ang Device
+                    </div>
+                    <div class="device-status-row">
+                        <b>Device ID:</b>
+                        <span id="connectedDeviceId">—</span>
+                    </div>
+                    <div class="device-status-row">
+                        <b>Device Name:</b>
+                        <span id="connectedDeviceName">—</span>
+                    </div>
+                    <div class="device-status-row">
+                        <b>Na-connect:</b>
+                        <span id="connectedDeviceDate">—</span>
+                    </div>
                 </div>
 
-                <!-- Connect form (shown if walang device pa) -->
+                <!-- Connect form -->
                 <div id="connectDeviceSection">
-                    <p style="color:#555; margin-bottom:16px; font-size:13px;">
+                    <p class="hint-text">
                         Ilagay ang Device ID ng iyong AgriKnows sensor device para simulan ang monitoring.
                     </p>
                     <div class="form-group">
-                        <label class="form-label">Device ID</label>
+                        <label class="form-label" for="deviceIdInput">Device ID</label>
                         <input type="text" id="deviceIdInput" class="form-input"
                             placeholder="e.g. device_001" autocomplete="off"/>
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Lokasyon <small style="color:#999;">(optional)</small></label>
-                        <input type="text" id="deviceLocationInput" class="form-input"
-                            placeholder="e.g. Field A, Bukid sa Hilaga"/>
+                        <label class="form-label" for="deviceNameInput">
+                            Device Name
+                            <span class="optional-label">(optional)</span>
+                        </label>
+                        <input type="text" id="deviceNameInput" class="form-input"
+                            placeholder="e.g. Sensor sa Bukid A" autocomplete="off"/>
                     </div>
-                    <p id="deviceErrorMsg" style="display:none; color:#c0392b; font-size:13px; margin-bottom:8px;"></p>
-                    <button id="confirmDeviceBtn" class="btn-confirm" style="width:100%; margin-top:8px;">
+                    <div id="deviceErrorMsg"></div>
+                    <button id="confirmDeviceBtn" type="button">
                         <i class="fas fa-plug"></i> I-connect ang Device
                     </button>
                 </div>
 
-                <!-- Action buttons -->
-                <div style="display:flex; gap:8px; margin-top:12px;">
-                    <button id="removeDeviceBtn" class="btn-delete" style="display:none; flex:1;">
-                        <i class="fas fa-unlink"></i> I-disconnect
-                    </button>
-                </div>
+                <!-- Disconnect button -->
+                <button id="removeDeviceBtn" type="button">
+                    <i class="fas fa-unlink"></i> I-disconnect ang Device
+                </button>
             </div>
         </div>
 
@@ -138,15 +303,14 @@
                     <div class="form-group">
                         <h2><i class="fas fa-seedling"></i> Crop Management</h2>
                         <div class="crop-controls">
-                            <button class="select-crop" id="selectCropBtn"><i class="fas fa-seedling"></i> Pumili ng
-                                Pananim</button>
-                            <button class="select-crop" id="addCropBtn"><i class="fas fa-plus-circle"></i> Mag Dagdag ng
-                                Pananim</button>
-
+                            <button class="select-crop" id="selectCropBtn"><i class="fas fa-seedling"></i> Pumili ng Pananim</button>
+                            <button class="select-crop" id="addCropBtn"><i class="fas fa-plus-circle"></i> Mag Dagdag ng Pananim</button>
                             <div class="pump-control">
                                 <label for="pump-switch"><i class="fas fa-faucet reading-icon pump"></i>Patubig</label>
-                                <label class="switch"><input type="checkbox" id="pump-switch"><span
-                                        class="slider round"></span></label>
+                                <label class="switch">
+                                    <input type="checkbox" id="pump-switch">
+                                    <span class="slider round"></span>
+                                </label>
                             </div>
                         </div>
                     </div>
@@ -154,17 +318,17 @@
                 <div class="current-crop">
                     <div class="crop-info">
                         <div class="crop-details">
-                            <h3 id="currentCropName"><i class="fas fa-seedling"></i>Walang naka piling crop</h3>
+                            <h3 id="currentCropName"><i class="fas fa-seedling"></i> Walang naka piling crop</h3>
                             <p id="currentCropOptimal">Pumili ng crop Para bantayan</p>
                         </div>
                         <div class="moisture-status" id="soil-moisture-status">
-                            <p>Pakabasa ng lupa:
-                                <b>pinakamainam</b>
-                            </p>
+                            <p>Pakabasa ng lupa: <b>pinakamainam</b></p>
                         </div>
                     </div>
+                </div>
             </section>
-            <!----------------------------------------notification--------------------------------------->
+
+            <!-- Notification popup -->
             <section class="notif">
                 <div id="popup" class="popup hidden">
                     <div class="popup-header">
@@ -176,22 +340,23 @@
                 </div>
                 <div id="overlay" class="overlay hidden"></div>
             </section>
-            <!---------------------------------------LOOB NG CHOOSE CROP BUTTON------------------------------------>
+
+            <!-- SELECT CROP MODAL -->
             <div class="modal" id="selectCropModal">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h3 class="modal-title">Pag-pili ng Pananim</h3>
                         <button class="close-modal">&times;</button>
                     </div>
-                    <p>Pumili ng isang pananim upang itakda ang pinakamainam na kondisyon. Maaaring i-edit ang mga
-                        pasadyang pananim.</p>
+                    <p>Pumili ng isang pananim upang itakda ang pinakamainam na kondisyon. Maaaring i-edit ang mga pasadyang pananim.</p>
                     <div class="crop-grid" id="cropGrid"></div>
                     <button id="confirmCropBtn" class="btn-confirm" style="width: 100%; margin-top: 20px;">
                         <i class="fas fa-check"></i> Kumpirmahin
                     </button>
                 </div>
             </div>
-            <!---------------------------------------LOOB NG ADD CROP BUTTON------------------------------------>
+
+            <!-- ADD CROP MODAL -->
             <div class="modal" id="addCropModal">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -237,7 +402,8 @@
                     </form>
                 </div>
             </div>
-            <!---------------------------------------LOOB NG CHOOSE CROP BUTTON TO EDIT------------------------------------>
+
+            <!-- EDIT/DELETE CROP MODAL -->
             <div class="modal" id="editDeleteCropModal">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -291,7 +457,8 @@
                     </button>
                 </div>
             </div>
-            <!---------------------------------------CURRENT STATUS/ Kasalukuyang Status------------------------------------>
+
+            <!-- CURRENT STATUS -->
             <section class="current-status">
                 <h2><i class="fas fa-chart-line"></i> Kasalukuyang Status</h2>
                 <div class="current-status-grid">
@@ -341,7 +508,8 @@
                     </div>
                 </div>
             </section>
-            <!---------------------------------------DATA HISTORY------------------------------------>
+
+            <!-- DATA HISTORY -->
             <section class="data-history">
                 <div class="history-header">
                     <h2><i class="fas fa-history"></i> Data History</h2>
@@ -383,18 +551,10 @@
                     </table>
                 </div>
                 <div id="history-graph" class="history-graph hidden">
-                    <div class="graph-container">
-                        <canvas id="soil-moisture-chart"></canvas>
-                    </div>
-                    <div class="graph-container">
-                        <canvas id="humidity-chart"></canvas>
-                    </div>
-                    <div class="graph-container">
-                        <canvas id="temperature-chart"></canvas>
-                    </div>
-                    <div class="graph-container">
-                        <canvas id="ph-level-chart"></canvas>
-                    </div>
+                    <div class="graph-container"><canvas id="soil-moisture-chart"></canvas></div>
+                    <div class="graph-container"><canvas id="humidity-chart"></canvas></div>
+                    <div class="graph-container"><canvas id="temperature-chart"></canvas></div>
+                    <div class="graph-container"><canvas id="ph-level-chart"></canvas></div>
                 </div>
             </section>
 

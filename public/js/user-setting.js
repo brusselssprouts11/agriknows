@@ -60,9 +60,52 @@ const passwordToggles = document.querySelectorAll('.password-toggle');
 
 let currentUser = null;
 
+// ==================== TOAST NOTIFICATION ====================
+function showToast(message, type = 'success') {
+    const existing = document.getElementById('ak-toast');
+    if (existing) existing.remove();
+
+    const toast = document.createElement('div');
+    toast.id = 'ak-toast';
+    const isSuccess = type === 'success';
+    toast.style.cssText = `
+        position: fixed;
+        bottom: 28px;
+        left: 50%;
+        transform: translateX(-50%) translateY(20px);
+        background: ${isSuccess ? '#2d6a4f' : '#c0392b'};
+        color: white;
+        padding: 12px 24px;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: 600;
+        font-family: 'Segoe UI', sans-serif;
+        box-shadow: 0 4px 18px rgba(0,0,0,0.18);
+        z-index: 99999;
+        opacity: 0;
+        transition: opacity 0.3s ease, transform 0.3s ease;
+        white-space: nowrap;
+        max-width: 90vw;
+        text-align: center;
+        pointer-events: none;
+    `;
+    toast.textContent = (isSuccess ? '✓ ' : '✗ ') + message;
+    document.body.appendChild(toast);
+
+    requestAnimationFrame(() => {
+        toast.style.opacity = '1';
+        toast.style.transform = 'translateX(-50%) translateY(0)';
+    });
+
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(-50%) translateY(20px)';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
 // ==================== LOGOUT POPUP ====================
 function createLogoutPopup() {
-    // Avoid duplicates
     if (document.getElementById('logout-popup-overlay')) return;
 
     const overlay = document.createElement('div');
@@ -87,7 +130,6 @@ function createLogoutPopup() {
             box-shadow: 0 8px 32px rgba(0,0,0,0.18);
             font-family: inherit;
         ">
-            <div style="font-size: 40px; margin-bottom: 12px;">👋</div>
             <h3 style="margin-bottom: 8px; color: #1a1a1a; font-size: 18px;">Mag-logout?</h3>
             <p style="color: #666; font-size: 14px; margin-bottom: 24px;">
                 Sigurado ka bang gusto mong mag-logout sa iyong account?
@@ -119,16 +161,12 @@ function createLogoutPopup() {
 
     document.body.appendChild(overlay);
 
-    // Cancel
     document.getElementById('logout-cancel-btn').addEventListener('click', () => {
         overlay.remove();
     });
 
-    // Confirm logout
     document.getElementById('logout-confirm-btn').addEventListener('click', async () => {
-        // Replace buttons with success message
         overlay.querySelector('div').innerHTML = `
-            <div style="font-size: 40px; margin-bottom: 12px;">✅</div>
             <h3 style="margin-bottom: 8px; color: #2d6a4f; font-size: 18px;">Logged out successfully!</h3>
             <p style="color: #666; font-size: 14px;">Ikaw ay na-logout na. Sandali lang...</p>
         `;
@@ -148,7 +186,6 @@ function createLogoutPopup() {
             sessionStorage.clear();
         }
 
-        // Short delay para makita ng user yung success message
         setTimeout(() => {
             window.location.replace('/logout');
         }, 1500);
@@ -215,7 +252,10 @@ passwordToggles.forEach(toggle => {
 
 // ==================== SAVE USERNAME ====================
 saveUserInfoBtn.addEventListener('click', async () => {
-    if (!currentUser) { alert('Error: No user is currently logged in.'); return; }
+    if (!currentUser) {
+        showToast('Error: No user is currently logged in.', 'error');
+        return;
+    }
     const newUsername = usernameInput.value.trim();
     const newEmail = emailInput.value.trim();
     let updates = {};
@@ -226,48 +266,62 @@ saveUserInfoBtn.addEventListener('click', async () => {
         changesMade = true;
     }
     if (newEmail !== currentUser.email) {
-        alert("To change your email address, you must first re-authenticate.");
+        showToast('To change your email, you must first re-authenticate.', 'error');
         emailInput.value = currentUser.email;
         return;
     }
-    if (!changesMade) { alert('No changes detected in username.'); return; }
+    if (!changesMade) {
+        showToast('No changes detected in username.', 'error');
+        return;
+    }
     if (updates.displayName) {
         try {
             await updateProfile(currentUser, updates);
             await syncLaravelSession(currentUser, newUsername);
-            alert('Username updated successfully!');
+            showToast('Username updated successfully!');
             currentUser.displayName = newUsername;
         } catch (error) {
             console.error('Username update error:', error);
-            alert('Error updating username: ' + error.message);
+            showToast('Error updating username: ' + error.message, 'error');
         }
     }
 });
 
 // ==================== SAVE PASSWORD ====================
 savePassBtn.addEventListener('click', async () => {
-    if (!currentUser) { alert('Error: No user is currently logged in.'); return; }
+    if (!currentUser) {
+        showToast('Error: No user is currently logged in.', 'error');
+        return;
+    }
     const currentPassword = currentPassInput.value;
     const newPassword = newPassInput.value;
     const confirmPassword = confirmPassInput.value;
-    if (!currentPassword || !newPassword || !confirmPassword) { alert('Please fill in all password fields.'); return; }
-    if (newPassword !== confirmPassword) { alert('New password and confirm password do not match.'); return; }
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+        showToast('Please fill in all password fields.', 'error');
+        return;
+    }
+    if (newPassword !== confirmPassword) {
+        showToast('New password and confirm password do not match.', 'error');
+        return;
+    }
+
     const credential = EmailAuthProvider.credential(currentUser.email, currentPassword);
     try {
         await reauthenticateWithCredential(currentUser, credential);
         await updatePassword(currentUser, newPassword);
-        alert('Password updated successfully!');
+        showToast('Password updated successfully!');
         currentPassInput.value = '';
         newPassInput.value = '';
         confirmPassInput.value = '';
     } catch (error) {
         if (error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
-            alert('Error: Incorrect current password or user not found.');
+            showToast('Incorrect current password or user not found.', 'error');
         } else if (error.code === 'auth/weak-password') {
-            alert('Error: The new password is too weak.');
+            showToast('The new password is too weak.', 'error');
         } else {
             console.error('Password update error:', error);
-            alert('Error updating password: ' + error.message);
+            showToast('Error updating password: ' + error.message, 'error');
         }
     }
 });

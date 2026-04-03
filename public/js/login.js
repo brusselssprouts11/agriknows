@@ -10,7 +10,7 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   sendPasswordResetEmail,
-  
+  onAuthStateChanged,
 } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js";
 
 //web app's Firebase configuration
@@ -24,11 +24,40 @@ const firebaseConfig = {
     appId: "1:922008629713:web:5cf15ca9d47036b9a8f0f0"
 };
 
-
 // Initialize Firebase
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
 const db = getDatabase(app);
+
+// =====================
+//   TOAST HELPER
+// =====================
+function showToast(message, type = "success", duration = 4000) {
+  // Create toast element if it doesn't exist yet
+  let toast = document.getElementById("toast");
+  if (!toast) {
+    toast = document.createElement("div");
+    toast.id = "toast";
+    toast.innerHTML = `<span class="toast-icon"></span><span class="toast-message"></span>`;
+    document.body.appendChild(toast);
+  }
+
+  const icon = toast.querySelector(".toast-icon");
+  const msg = toast.querySelector(".toast-message");
+
+  icon.textContent = type === "success" ? "✔" : "✖";
+  msg.textContent = message;
+
+  // Reset classes
+  toast.className = "";
+  toast.classList.add(type, "show");
+
+  // Auto-hide after duration
+  clearTimeout(toast._hideTimeout);
+  toast._hideTimeout = setTimeout(() => {
+    toast.classList.remove("show");
+  }, duration);
+}
 
 async function ensureUserProfileInDatabase(user) {
   const userRef = ref(db, `users/${user.uid}`);
@@ -67,53 +96,43 @@ async function createLaravelSessionFromFirebaseUser(user) {
   return payload;
 }
 
-
-//show pass
+// Show/hide password toggle
 document.addEventListener("DOMContentLoaded", () => {
   const togglePassword = document.getElementById("togglePassword");
-  if (togglePassword){
+  if (togglePassword) {
     togglePassword.addEventListener("click", () => {
-        const password = document.getElementById("password");
-
-        const isHidden = password.type === "password";
-
-        // Toggle password input type
-        password.type = isHidden ? "text" : "password";
-
-        // Swap icon using data attributes
-        togglePassword.src = isHidden
-          ? togglePassword.dataset.hide   // when showing password
-          : togglePassword.dataset.show;  // when hiding password
+      const password = document.getElementById("password");
+      const isHidden = password.type === "password";
+      password.type = isHidden ? "text" : "password";
+      togglePassword.src = isHidden
+        ? togglePassword.dataset.hide
+        : togglePassword.dataset.show;
     });
   }
 });
 
-
-
-
-// --- ADD THIS: Google Sign-In Logic ---
+// Google Sign-In
 const googleLoginBtn = document.getElementById("google-login-btn");
 if (googleLoginBtn) {
-const provider = new GoogleAuthProvider(); // Create a Google provider instance
+  const provider = new GoogleAuthProvider();
 
-googleLoginBtn.addEventListener("click", async (event) => {
-  event.preventDefault(); // Prevent default button behavior
+  googleLoginBtn.addEventListener("click", async (event) => {
+    event.preventDefault();
 
-  try {
-    const result = await signInWithPopup(auth, provider);
-    const user = result.user;
-    await ensureUserProfileInDatabase(user);
-    const payload = await createLaravelSessionFromFirebaseUser(user);
-
-    window.location.href = payload.redirect || "/welcome";
-  } catch (error) {
-    console.error("Google Sign-In Error:", error);
-    alert(`Error: ${error.message}`);
-  }
-});
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+      await ensureUserProfileInDatabase(user);
+      const payload = await createLaravelSessionFromFirebaseUser(user);
+      window.location.href = payload.redirect || "/welcome";
+    } catch (error) {
+      console.error("Google Sign-In Error:", error);
+      showToast(error.message || "Google sign-in failed.", "error");
+    }
+  });
 }
-// ------------------------------------
 
+// Email/Password Login
 const loginForm = document.querySelector("form.login-form");
 if (loginForm) {
   loginForm.addEventListener("submit", async (event) => {
@@ -123,7 +142,7 @@ if (loginForm) {
     const password = document.getElementById("password")?.value;
 
     if (!email || !password) {
-      alert("Please enter email and password.");
+      showToast("Please enter email and password.", "error");
       return;
     }
 
@@ -134,31 +153,32 @@ if (loginForm) {
       window.location.href = payload.redirect || "/welcome";
     } catch (error) {
       console.error("Email login error:", error);
-      alert(error.message || "Login failed.");
+      showToast(error.message || "Login failed.", "error");
     }
   });
 }
 
-//reset 
+// Forgot Password / Reset
 const reset = document.getElementById("reset");
 if (reset) {
-reset.addEventListener('click', function(event){
-event.preventDefault()
+  reset.addEventListener("click", function (event) {
+    event.preventDefault();
 
-const email = document.getElementById("email").value;
-sendPasswordResetEmail(auth, email)
-  .then(() => {
-    alert("email sent!") 
-    
-  })
-  .catch((error) => {
-    const errorCode = error.code;
-    const errorMessage = error.message;
-    alert(errorMessage)
+    const email = document.getElementById("email").value.trim();
+
+    if (!email) {
+      showToast("Please enter your email address first.", "error");
+      return;
+    }
+
+    sendPasswordResetEmail(auth, email)
+      .then(() => {
+        showToast("Password reset email sent! Check your inbox.", "success");
+      })
+      .catch((error) => {
+        console.error("Reset error:", error);
+        showToast(error.message || "Failed to send reset email.", "error");
+      });
   });
-})
 }
 
-onAuthStateChanged(auth, (user) => {
-    if (!user) window.location.replace("/login");
-});

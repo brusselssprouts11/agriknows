@@ -43,11 +43,9 @@ function showPopup(message) {
     const popup = document.getElementById("popup");
     const overlay = document.getElementById("overlay");
     const popupText = document.getElementById("popup-text");
-
     popupText.innerHTML = message;
     popup.classList.remove("hidden");
     overlay.classList.remove("hidden");
-
     document.getElementById("popup-btn").addEventListener("click", () => {
         document.getElementById("popup").classList.add("hidden");
         document.getElementById("overlay").classList.add("hidden");
@@ -108,29 +106,21 @@ function getUserCropsQuery(userId) {
     return query(ref(db, "crop"), orderByChild("user_id"), equalTo(userId));
 }
 
-// ── UPDATED: now accepts optional deviceId, filters by deviceId first ──
 function isRecordOwnedByUser(record, userId, deviceId) {
     if (!record) return false;
-
-    // Primary filter: match by deviceId (most reliable)
     if (deviceId && record.deviceId) {
         return String(record.deviceId) === String(deviceId);
     }
-
-    // Fallback: match by user_id (Auth UID)
     const ownerId = record.user_id || record.userId || record.uid || null;
     return String(ownerId || "") === String(userId);
 }
 
-// ── NEW: Look up the deviceId assigned to the logged-in user ──
 async function getDeviceIdForUser() {
     try {
         const authUser = auth.currentUser;
         if (!authUser?.email) return null;
-
         const usersSnap = await get(ref(db, "users"));
         if (!usersSnap.exists()) return null;
-
         const users = usersSnap.val();
         for (const [key, userData] of Object.entries(users)) {
             if (userData.email === authUser.email && userData.deviceId) {
@@ -184,9 +174,7 @@ async function loadUserCropsForMonitoring() {
             } else {
                 allCropData = { ...PREDEFINED_CROP_DATA };
             }
-        }, (error) => {
-            allCropData = { ...PREDEFINED_CROP_DATA };
-        });
+        }, (error) => { allCropData = { ...PREDEFINED_CROP_DATA }; });
     } catch (error) {
         allCropData = { ...PREDEFINED_CROP_DATA };
     }
@@ -206,7 +194,7 @@ onAuthStateChanged(auth, (user) => {
     } else {
         console.log("❌ No user logged in — redirecting to login");
         currentUserEmail = null;
-        window.location.replace("/login"); // ← guard
+        window.location.replace("/login");
     }
 });
 
@@ -223,7 +211,7 @@ window.onload = function () {
 
 //-------------------------------------Global Variables-----------------------------
 let deviceIdCounter = 1;
-let currentDeviceId = null; // ← device assigned to this farmer
+let currentDeviceId = null;
 let allCropData = {};
 let currentCropKey = null;
 let latestHistoryData = [];
@@ -241,8 +229,8 @@ const POPUP_COOLDOWN = 60 * 1000;
 
 // ==================== EMAILJS CONFIG ====================
 let currentUserEmail = null;
-let lastEmailSentTime = {}; // per-sensor cooldown tracker
-const EMAIL_COOLDOWN = 30 * 60 * 1000; // 30 minutes per sensor
+let lastEmailSentTime = {};
+const EMAIL_COOLDOWN = 30 * 60 * 1000;
 const EMAILJS_SERVICE_ID = 'service_l5qt0y6';
 const EMAILJS_TEMPLATE_ID = 'template_jjlu31t';
 const EMAILJS_PUBLIC_KEY = 'fPlF_bWJkIFtJT3v2';
@@ -255,11 +243,11 @@ const DEFAULT_SENSOR_THRESHOLDS = {
 };
 
 const PREDEFINED_CROP_DATA = {
-    corn: { name: "Corn", temperature: { min: 18, max: 30 }, moisture: { min: 50, max: 70 }, ph: { min: 5.8, max: 7.0 }, humidity: { min: 50, max: 70 } },
-    rice: { name: "Rice", temperature: { min: 20, max: 35 }, moisture: { min: 70, max: 90 }, ph: { min: 5.0, max: 6.5 }, humidity: { min: 70, max: 85 } },
+    corn:     { name: "Corn",     temperature: { min: 18, max: 30 }, moisture: { min: 50, max: 70 }, ph: { min: 5.8, max: 7.0 }, humidity: { min: 50, max: 70 } },
+    rice:     { name: "Rice",     temperature: { min: 20, max: 35 }, moisture: { min: 70, max: 90 }, ph: { min: 5.0, max: 6.5 }, humidity: { min: 70, max: 85 } },
     eggplant: { name: "Eggplant", temperature: { min: 20, max: 30 }, moisture: { min: 60, max: 80 }, ph: { min: 5.5, max: 6.8 }, humidity: { min: 50, max: 70 } },
-    tomato: { name: "Tomato", temperature: { min: 18, max: 27 }, moisture: { min: 60, max: 80 }, ph: { min: 5.5, max: 6.8 }, humidity: { min: 65, max: 85 } },
-    onion: { name: "Onion", temperature: { min: 15, max: 30 }, moisture: { min: 60, max: 80 }, ph: { min: 6.0, max: 7.0 }, humidity: { min: 50, max: 70 } },
+    tomato:   { name: "Tomato",   temperature: { min: 18, max: 27 }, moisture: { min: 60, max: 80 }, ph: { min: 5.5, max: 6.8 }, humidity: { min: 65, max: 85 } },
+    onion:    { name: "Onion",    temperature: { min: 15, max: 30 }, moisture: { min: 60, max: 80 }, ph: { min: 6.0, max: 7.0 }, humidity: { min: 50, max: 70 } },
 };
 
 //---------------------------user input crop selector-------------------------------------
@@ -270,10 +258,8 @@ document.addEventListener("DOMContentLoaded", () => {
 async function saveData() {
     const user = await getResolvedUser();
     if (!user) { alert("Please login first!"); return; }
-
     const cropName = document.getElementById("CropName").value.trim();
     if (!cropName) { showPopup("Mangyaring maglagay ng pangalan ng pananim."); return; }
-
     const tempMin = Number(document.getElementById("tempMin").value);
     const tempMax = Number(document.getElementById("tempMax").value);
     const moistureMin = Number(document.getElementById("moistureMin").value);
@@ -282,12 +268,10 @@ async function saveData() {
     const phMax = Number(document.getElementById("phMax").value);
     const humidityMin = Number(document.getElementById("humidityMin").value);
     const humidityMax = Number(document.getElementById("humidityMax").value);
-
     if (tempMin >= tempMax) { showPopup("Ang minimum temperatura ay dapat mas mababa sa maximum."); return; }
     if (moistureMin >= moistureMax) { showPopup("Ang minimum moisture ay dapat mas mababa sa maximum."); return; }
     if (phMin >= phMax) { showPopup("Ang minimum pH ay dapat mas mababa sa maximum."); return; }
     if (humidityMin >= humidityMax) { showPopup("Ang minimum humidity ay dapat mas mababa sa maximum."); return; }
-
     const customCropsRef = getUserCropsQuery(user.uid);
     try {
         const existingSnapshot = await get(customCropsRef);
@@ -296,9 +280,7 @@ async function saveData() {
         const hasDuplicate = Object.values(existingCrops).some((crop) => (crop?.name || "").trim().toLowerCase() === normalizedCropName);
         if (hasDuplicate) { showPopup("May kaparehong pangalan na ng pananim. Gumamit ng ibang pangalan."); return; }
     } catch (error) { console.error("Error checking existing crops:", error); }
-
     const cropRef = push(ref(db, "crop"));
-    const cropKey = cropRef.key;
     const cropData = {
         name: cropName, user_id: user.uid,
         temp: { min: tempMin, max: tempMax },
@@ -307,7 +289,6 @@ async function saveData() {
         humidity: { min: humidityMin, max: humidityMax },
         createdAt: new Date().toISOString(),
     };
-
     set(cropRef, cropData)
         .then(() => {
             showPopup(`Tagumpay! Naka-save na ang ${cropName} sa iyong account.`);
@@ -324,18 +305,15 @@ function openCropSelectionModal() {
     modal.style.display = "flex";
     loadCropsInModal();
 }
-
 function closeCropSelectionModal() {
     const modal = document.getElementById("cropSelectionModal");
     modal.classList.remove("active");
     modal.style.display = "none";
 }
-
 document.addEventListener("DOMContentLoaded", function () {
     const modal = document.getElementById("cropSelectionModal");
     if (modal) modal.addEventListener("click", function (e) { if (e.target === modal) closeCropSelectionModal(); });
 });
-
 async function loadCropsInModal() {
     const user = await getResolvedUser();
     if (!user) return;
@@ -376,7 +354,6 @@ async function loadCropsInModal() {
         showPopup("Hindi ma-load ang custom crops. I-check ang Firebase read rules para sa /crop.");
     }
 }
-
 function selectCrop(cardElement, cropKey, cropData) {
     document.querySelectorAll("#cropSelectionModal .crop-selection-card").forEach((card) => card.classList.remove("selected"));
     cardElement.classList.add("selected");
@@ -389,7 +366,6 @@ function selectCrop(cardElement, cropKey, cropData) {
         }
     }
 }
-
 document.addEventListener("DOMContentLoaded", function () {
     setTimeout(() => {
         document.querySelectorAll("#cropSelectionModal .crop-selection-card[data-crop]").forEach((card) => {
@@ -397,7 +373,6 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }, 300);
 });
-
 document.addEventListener("DOMContentLoaded", function () {
     const confirmBtn = document.getElementById("confirmCropSelectionBtn");
     if (confirmBtn) {
@@ -422,7 +397,6 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 });
-
 window.openCropSelectionModal = openCropSelectionModal;
 window.closeCropSelectionModal = closeCropSelectionModal;
 
@@ -430,7 +404,6 @@ window.closeCropSelectionModal = closeCropSelectionModal;
 document.addEventListener("DOMContentLoaded", function () { initDashboard(); });
 
 //----------------------------------------KASALUKUYANG STATUS-------------------------------
-// ==================== EMAILJS ALERT SYSTEM ====================
 function initEmailJS() {
     if (typeof emailjs !== "undefined") {
         emailjs.init(EMAILJS_PUBLIC_KEY);
@@ -442,97 +415,43 @@ function initEmailJS() {
 
 function checkAndSendSensorAlerts(sensorData) {
     if (!currentUserEmail) return;
-
     const currentCrop = allCropData[currentCropKey];
     const cropName = currentCrop && currentCropKey !== "none" ? currentCrop.name : "Walang napiling pananim";
     const now = Date.now();
-
     const sensors = [
-        {
-            key: "temperature",
-            label: "Temperatura",
-            value: Number(sensorData.temperature || 0),
-            unit: "°C",
-            min: currentCrop?.temperature?.min ?? DEFAULT_SENSOR_THRESHOLDS.temperature.min,
-            max: currentCrop?.temperature?.max ?? DEFAULT_SENSOR_THRESHOLDS.temperature.max,
-        },
-        {
-            key: "moisture",
-            label: "Soil Moisture",
-            value: Number(sensorData.soilMoisture || sensorData.moisture || 0),
-            unit: "%",
-            min: currentCrop?.moisture?.min ?? DEFAULT_SENSOR_THRESHOLDS.moisture.min,
-            max: currentCrop?.moisture?.max ?? DEFAULT_SENSOR_THRESHOLDS.moisture.max,
-        },
-        {
-            key: "humidity",
-            label: "Humidity",
-            value: Number(sensorData.humidity || 0),
-            unit: "%",
-            min: currentCrop?.humidity?.min ?? DEFAULT_SENSOR_THRESHOLDS.humidity.min,
-            max: currentCrop?.humidity?.max ?? DEFAULT_SENSOR_THRESHOLDS.humidity.max,
-        },
-        {
-            key: "ph",
-            label: "pH Level",
-            value: Number(sensorData.pH || sensorData.ph || 0),
-            unit: "",
-            min: currentCrop?.ph?.min ?? DEFAULT_SENSOR_THRESHOLDS.ph.min,
-            max: currentCrop?.ph?.max ?? DEFAULT_SENSOR_THRESHOLDS.ph.max,
-        },
+        { key: "temperature", label: "Temperatura", value: Number(sensorData.temperature || 0), unit: "°C", min: currentCrop?.temperature?.min ?? DEFAULT_SENSOR_THRESHOLDS.temperature.min, max: currentCrop?.temperature?.max ?? DEFAULT_SENSOR_THRESHOLDS.temperature.max },
+        { key: "moisture", label: "Soil Moisture", value: Number(sensorData.soilMoisture || sensorData.moisture || 0), unit: "%", min: currentCrop?.moisture?.min ?? DEFAULT_SENSOR_THRESHOLDS.moisture.min, max: currentCrop?.moisture?.max ?? DEFAULT_SENSOR_THRESHOLDS.moisture.max },
+        { key: "humidity", label: "Humidity", value: Number(sensorData.humidity || 0), unit: "%", min: currentCrop?.humidity?.min ?? DEFAULT_SENSOR_THRESHOLDS.humidity.min, max: currentCrop?.humidity?.max ?? DEFAULT_SENSOR_THRESHOLDS.humidity.max },
+        { key: "ph", label: "pH Level", value: Number(sensorData.pH || sensorData.ph || 0), unit: "", min: currentCrop?.ph?.min ?? DEFAULT_SENSOR_THRESHOLDS.ph.min, max: currentCrop?.ph?.max ?? DEFAULT_SENSOR_THRESHOLDS.ph.max },
     ];
-
     sensors.forEach((sensor) => {
-        // Skip if still within cooldown for this sensor
         if (lastEmailSentTime[sensor.key] && now - lastEmailSentTime[sensor.key] < EMAIL_COOLDOWN) return;
-
         let status = null;
         if (sensor.value < sensor.min) status = "MABABA (Too Low) 🔴";
         else if (sensor.value > sensor.max) status = "MATAAS (Too High) 🔵";
         if (!status) return;
-
-        const templateParams = {
-            to_email: currentUserEmail,
-            sensor: sensor.label,
-            status: status,
-            value: `${sensor.value}${sensor.unit}`,
-            min: `${sensor.min}${sensor.unit}`,
-            max: `${sensor.max}${sensor.unit}`,
-            crop: cropName,
-            time: new Date().toLocaleString("en-PH"),
-        };
-
+        const templateParams = { to_email: currentUserEmail, sensor: sensor.label, status, value: `${sensor.value}${sensor.unit}`, min: `${sensor.min}${sensor.unit}`, max: `${sensor.max}${sensor.unit}`, crop: cropName, time: new Date().toLocaleString("en-PH") };
         emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams)
-            .then(() => {
-                console.log(`✅ Alert email sent for ${sensor.label}:`, sensor.value);
-                lastEmailSentTime[sensor.key] = now;
-                showNotification(`📧 Alert sent: ${sensor.label} is ${status}`, "on");
-            })
-            .catch((error) => {
-                console.error(`❌ Email failed for ${sensor.label}:`, error);
-            });
+            .then(() => { console.log(`✅ Alert email sent for ${sensor.label}:`, sensor.value); lastEmailSentTime[sensor.key] = now; showNotification(`📧 Alert sent: ${sensor.label} is ${status}`, "on"); })
+            .catch((error) => { console.error(`❌ Email failed for ${sensor.label}:`, error); });
     });
 }
 
 function updateCurrentReadings(sensorData) {
     if (!sensorData) return;
     const currentTime = Date.now();
-    // Handle both numeric (ms) and string timestamps ("2026-03-08 15:54:35")
     const rawTs = sensorData.timestamp;
     const dataTime = typeof rawTs === "number" ? rawTs : new Date(rawTs).getTime();
     if (isNaN(dataTime) || currentTime - dataTime > 300000) { showOfflineState(); return; }
-
     const temp = sensorData.temperature > 0 ? sensorData.temperature : "--";
     const moisture = sensorData.moisture > 0 || sensorData.soilMoisture > 0 ? sensorData.moisture || sensorData.soilMoisture : "--";
     const humidity = sensorData.humidity > 0 ? sensorData.humidity : "--";
     const ph = sensorData.ph > 0 || sensorData.pH > 0 ? sensorData.ph || sensorData.pH : "--";
     const light = sensorData.light || sensorData.light_status || 0;
-
     document.getElementById("current-temperature").textContent = temp === "--" ? "-- °C" : `${temp} °C`;
     document.getElementById("current-soil-moisture").textContent = moisture === "--" ? "-- %" : `${moisture}%`;
     document.getElementById("current-humidity").textContent = humidity === "--" ? "-- %" : `${humidity}%`;
     document.getElementById("current-ph-level").textContent = ph === "--" ? "-- pH" : `${ph} pH`;
-
     const currentCrop = allCropData[currentCropKey];
     if (currentCrop) {
         updateStatusElement("status-temp-text", temp, currentCrop.temperature.min, currentCrop.temperature.max, "Celsius");
@@ -542,16 +461,16 @@ function updateCurrentReadings(sensorData) {
     } else {
         document.querySelectorAll(".status-message").forEach((el) => { el.textContent = "Pumili ng Pananim"; el.className = "status-message status-warning"; });
     }
-
-    const lightText = light == 1 || light === "Light" ? "Maliwanag" : "Madilim";
-    const lightClass = light == 1 || light === "Light" ? "status-good" : "status-warning";
+    const isLight = light === "LIGHT" || light === "Light" || light == 1;
+    const lightText = isLight ? "Maliwanag" : "Madilim";
+    const lightClass = isLight ? "status-good" : "status-warning";
     const lightEl = document.getElementById("light-status");
     const lightStatEl = document.getElementById("status-light-text");
-    if (lightEl) lightEl.textContent = light === 1 ? "Light" : "Dark";
+    if (lightEl) lightEl.textContent = isLight ? "Light" : "Dark";
     if (lightStatEl) { lightStatEl.textContent = lightText; lightStatEl.className = `status-message ${lightClass}`; }
     updateSoilMoistureStatus(moisture);
-    checkAndSendSensorAlerts(sensorData); // ← email alerts for all sensors
-}
+    checkAndSendSensorAlerts(sensorData);
+    }
 
 function updateStatusElement(elementId, value, min, max, unit) {
     const element = document.getElementById(elementId);
@@ -610,42 +529,35 @@ function setCrop(cropKey, cropInfo) {
 function initializeEventListeners() { initializeModals(); initializeDeviceManager(); }
 
 // ==================== DEVICE MANAGER ====================
+// Replace these functions in home.js
+
 function initializeDeviceManager() {
-    // Open modal button — add id="addDeviceBtn" in your HTML
     const addDeviceBtn = document.getElementById("addDeviceBtn");
     if (addDeviceBtn) addDeviceBtn.addEventListener("click", openDeviceModal);
-
-    // Close modal
     const closeBtn = document.getElementById("closeDeviceModal");
     if (closeBtn) closeBtn.addEventListener("click", closeDeviceModal);
-
-    // Confirm connect
     const confirmBtn = document.getElementById("confirmDeviceBtn");
     if (confirmBtn) confirmBtn.addEventListener("click", connectDevice);
-
-    // Remove device
     const removeBtn = document.getElementById("removeDeviceBtn");
     if (removeBtn) removeBtn.addEventListener("click", removeDevice);
-
-    // Close on overlay click
     const modal = document.getElementById("deviceModal");
     if (modal) modal.addEventListener("click", (e) => { if (e.target === modal) closeDeviceModal(); });
-
-    // Load current device status on page load
     loadCurrentDeviceStatus();
 }
 
 function openDeviceModal() {
     const modal = document.getElementById("deviceModal");
-    if (modal) { modal.style.display = "flex"; }
+    if (modal) modal.style.display = "flex";
     loadCurrentDeviceStatus();
 }
 
 function closeDeviceModal() {
     const modal = document.getElementById("deviceModal");
     if (modal) modal.style.display = "none";
-    const input = document.getElementById("deviceIdInput");
-    if (input) input.value = "";
+    const idInput = document.getElementById("deviceIdInput");
+    const nameInput = document.getElementById("deviceNameInput");
+    if (idInput) idInput.value = "";
+    if (nameInput) nameInput.value = "";
     clearDeviceError();
 }
 
@@ -659,92 +571,86 @@ function clearDeviceError() {
     if (err) { err.textContent = ""; err.style.display = "none"; }
 }
 
+// ==================== LOAD CURRENT DEVICE STATUS ====================
 async function loadCurrentDeviceStatus() {
     const user = await getResolvedUser();
     if (!user) return;
-
     const statusSection = document.getElementById("currentDeviceStatus");
     const removeBtn = document.getElementById("removeDeviceBtn");
     const connectSection = document.getElementById("connectDeviceSection");
-
     try {
         const snapshot = await get(ref(db, `users/${user.uid}`));
         if (!snapshot.exists()) return;
         const userData = snapshot.val();
         const deviceId = userData.deviceId;
-
         if (deviceId) {
-            // Has device — show status
             if (statusSection) {
                 statusSection.style.display = "block";
-                const nameEl = document.getElementById("connectedDeviceId");
-                const locEl = document.getElementById("connectedDeviceLocation");
+                const idEl = document.getElementById("connectedDeviceId");
+                const nameEl = document.getElementById("connectedDeviceName");
                 const dateEl = document.getElementById("connectedDeviceDate");
-                if (nameEl) nameEl.textContent = deviceId;
-                if (locEl) locEl.textContent = userData.deviceLocation || "—";
-                if (dateEl) dateEl.textContent = userData.deviceAssignedAt ? new Date(userData.deviceAssignedAt).toLocaleDateString("en-PH") : "—";
+                if (idEl) idEl.textContent = deviceId;
+                if (nameEl) nameEl.textContent = userData.deviceName || "—";
+                if (dateEl) dateEl.textContent = userData.deviceAssignedAt
+                    ? new Date(userData.deviceAssignedAt).toLocaleDateString("en-PH")
+                    : "—";
             }
-            if (removeBtn) removeBtn.style.display = "inline-flex";
+            if (removeBtn) removeBtn.style.display = "flex";
             if (connectSection) connectSection.style.display = "none";
-
-            // Also update the device badge in the page if it exists
-            updateDeviceBadge(deviceId);
+            updateDeviceBadge(deviceId, userData.deviceName);
         } else {
-            // No device
             if (statusSection) statusSection.style.display = "none";
             if (removeBtn) removeBtn.style.display = "none";
             if (connectSection) connectSection.style.display = "block";
-            updateDeviceBadge(null);
+            updateDeviceBadge(null, null);
         }
     } catch (e) {
         console.error("Error loading device status:", e);
     }
 }
 
-function updateDeviceBadge(deviceId) {
+// ==================== DEVICE BADGE ====================
+function updateDeviceBadge(deviceId, deviceName) {
+    const btn = document.getElementById("addDeviceBtn");
     const badge = document.getElementById("deviceBadge");
-    if (!badge) return;
+    if (!btn || !badge) return;
     if (deviceId) {
-        badge.textContent = deviceId;
-        badge.style.background = "#d8f3dc";
-        badge.style.color = "#2d6a4f";
+        badge.textContent = deviceName ? deviceName : deviceId;
+        btn.style.background = "#d8f3dc";
+        btn.style.color = "#2d6a4f";
+        btn.style.borderColor = "#52b788";
+        btn.title = `Connected: ${deviceId}`;
     } else {
         badge.textContent = "Walang device";
-        badge.style.background = "#fdecea";
-        badge.style.color = "#c0392b";
+        btn.style.background = "#fdecea";
+        btn.style.color = "#c0392b";
+        btn.style.borderColor = "#fca5a5";
+        btn.title = "Walang naka-connect na device";
     }
 }
 
+// ==================== CONNECT DEVICE ====================
+// Fields: Device ID (required) + Device Name (optional). No location.
 async function connectDevice() {
     clearDeviceError();
     const user = await getResolvedUser();
     if (!user) { showDeviceError("Hindi ka naka-login."); return; }
-
-    const input = document.getElementById("deviceIdInput");
-    const locationInput = document.getElementById("deviceLocationInput");
-    const deviceId = input?.value.trim();
-    const location = locationInput?.value.trim() || "";
-
+    const idInput = document.getElementById("deviceIdInput");
+    const nameInput = document.getElementById("deviceNameInput");
+    const deviceId = idInput?.value.trim();
+    const deviceName = nameInput?.value.trim() || "";   // optional
     if (!deviceId) { showDeviceError("Mangyaring ilagay ang Device ID."); return; }
-
     const confirmBtn = document.getElementById("confirmDeviceBtn");
     if (confirmBtn) { confirmBtn.disabled = true; confirmBtn.textContent = "Nagko-connect..."; }
-
     try {
-        // Check if device exists and is already assigned to someone else
         const deviceSnap = await get(ref(db, `devices/${deviceId}`));
         if (deviceSnap.exists()) {
-            const deviceData = deviceSnap.val();
-            const alreadyAssignedTo = deviceData.assignedTo;
-
-            // Strict one-to-one: block if assigned to ANY other user
+            const alreadyAssignedTo = deviceSnap.val().assignedTo;
             if (alreadyAssignedTo && alreadyAssignedTo !== user.uid) {
-                showDeviceError("❌ Ang device na ito ay naka-connect na sa ibang account. Hindi maaaring gamitin ng dalawang user ang iisang device.");
+                showDeviceError("❌ Ang device na ito ay naka-connect na sa ibang account.");
                 return;
             }
         }
-
-        // Check if user already has a different device — warn and free the old one
         const userSnap = await get(ref(db, `users/${user.uid}`));
         const oldDeviceId = userSnap.val()?.deviceId;
         if (oldDeviceId && oldDeviceId !== deviceId) {
@@ -754,135 +660,81 @@ async function connectDevice() {
                 "Kanselahin", "Oo, Palitan"
             );
             if (!confirmSwitch) {
-                if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.textContent = "I-connect"; }
+                if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.innerHTML = '<i class="fas fa-plug"></i> I-connect ang Device'; }
                 return;
             }
             await remove(ref(db, `devices/${oldDeviceId}`));
         }
-
-        // Save to users collection
-        await update(ref(db, `users/${user.uid}`), {
+        // Save to users — deviceId + optional deviceName, no location
+        const updatePayload = {
             deviceId,
-            deviceLocation: location || null,
             deviceAssignedAt: new Date().toISOString(),
-        });
+        };
+        if (deviceName) updatePayload.deviceName = deviceName;
+        else updatePayload.deviceName = null;
 
-        // Save to devices collection (for Vercel/Arduino lookup)
+        await update(ref(db, `users/${user.uid}`), updatePayload);
+
+        // Save to devices collection
         await set(ref(db, `devices/${deviceId}`), {
             assignedTo: user.uid,
-            location: location || null,
+            deviceName: deviceName || null,
             assignedAt: new Date().toISOString(),
         });
-
-        // Update local cache
         currentDeviceId = deviceId;
-
-        showNotification(`✅ Device "${deviceId}" na-connect!`, "on");
+        const displayName = deviceName || deviceId;
+        showNotification(`✅ Device "${displayName}" na-connect!`, "on");
         closeDeviceModal();
         await loadCurrentDeviceStatus();
-
-        // Restart data listener with new deviceId
         listenToPumpControl(deviceId);
-        showPopup(`✅ Matagumpay na na-connect ang <b>${deviceId}</b>!<br>Magsisimula na ang data monitoring.`);
-
+        showPopup(`✅ Matagumpay na na-connect ang <b>${displayName}</b>!<br>Magsisimula na ang data monitoring.`);
     } catch (e) {
         showDeviceError("Error sa pag-connect: " + e.message);
     } finally {
-        if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.textContent = "I-connect"; }
+        if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.innerHTML = '<i class="fas fa-plug"></i> I-connect ang Device'; }
     }
 }
 
-async function removeDevice() {
-    showDisconnectPopup();
-}
+// ==================== DISCONNECT DEVICE ====================
+async function removeDevice() { showDisconnectPopup(); }
 
 function showDisconnectPopup() {
     if (document.getElementById('disconnect-popup-overlay')) return;
-
     const overlay = document.createElement('div');
     overlay.id = 'disconnect-popup-overlay';
-    overlay.style.cssText = `
-        position:fixed;inset:0;background:rgba(0,0,0,0.5);
-        z-index:9999;display:flex;align-items:center;justify-content:center;
-    `;
-
+    overlay.style.cssText = `position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;`;
     overlay.innerHTML = `
-        <div style="
-            background:white;border-radius:14px;padding:32px 28px;
-            max-width:360px;width:90%;text-align:center;
-            box-shadow:0 8px 32px rgba(0,0,0,0.18);font-family:inherit;
-        ">
-            <div style="font-size:40px;margin-bottom:12px;">🔌</div>
+        <div style="background:white;border-radius:14px;padding:32px 28px;max-width:360px;width:90%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.18);font-family:inherit;">
             <h3 style="margin-bottom:8px;color:#1a1a1a;font-size:18px;">I-disconnect ang Device?</h3>
-            <p style="color:#666;font-size:14px;margin-bottom:24px;">
-                Sigurado ka bang gusto mong i-disconnect ang iyong device?
-                Hindi na makikita ang sensor data hanggang mag-connect ulit.
-            </p>
+            <p style="color:#666;font-size:14px;margin-bottom:24px;">Sigurado ka bang gusto mong i-disconnect ang iyong device? Hindi na makikita ang sensor data hanggang mag-connect ulit.</p>
             <div style="display:flex;gap:10px;">
-                <button id="disconnect-cancel-btn" style="
-                    flex:1;padding:11px;border:1.5px solid #ddd;
-                    border-radius:8px;background:white;color:#555;
-                    font-size:14px;font-weight:600;cursor:pointer;
-                ">Kanselahin</button>
-                <button id="disconnect-confirm-btn" style="
-                    flex:1;padding:11px;border:none;
-                    border-radius:8px;background:#c0392b;color:white;
-                    font-size:14px;font-weight:600;cursor:pointer;
-                ">Oo, I-disconnect</button>
+                <button id="disconnect-cancel-btn" style="flex:1;padding:11px;border:1.5px solid #ddd;border-radius:8px;background:white;color:#555;font-size:14px;font-weight:600;cursor:pointer;">Kanselahin</button>
+                <button id="disconnect-confirm-btn" style="flex:1;padding:11px;border:none;border-radius:8px;background:#c0392b;color:white;font-size:14px;font-weight:600;cursor:pointer;">Oo, I-disconnect</button>
             </div>
-        </div>
-    `;
-
+        </div>`;
     document.body.appendChild(overlay);
-
-    document.getElementById('disconnect-cancel-btn').addEventListener('click', () => {
-        overlay.remove();
-    });
-
+    document.getElementById('disconnect-cancel-btn').addEventListener('click', () => overlay.remove());
     document.getElementById('disconnect-confirm-btn').addEventListener('click', async () => {
-        // Show loading state
-        overlay.querySelector('div').innerHTML = `
-            <div style="font-size:40px;margin-bottom:12px;">⏳</div>
-            <h3 style="margin-bottom:8px;color:#1a1a1a;font-size:18px;">Nagdi-disconnect...</h3>
-            <p style="color:#666;font-size:14px;">Sandali lang.</p>
-        `;
-
+        overlay.querySelector('div').innerHTML = `<div style="font-size:40px;margin-bottom:12px;">⏳</div><h3 style="margin-bottom:8px;color:#1a1a1a;font-size:18px;">Nagdi-disconnect...</h3><p style="color:#666;font-size:14px;">Sandali lang.</p>`;
         try {
             const user = await getResolvedUser();
             if (!user) { overlay.remove(); return; }
-
             const snapshot = await get(ref(db, `users/${user.uid}`));
             const deviceId = snapshot.val()?.deviceId;
-
-            await update(ref(db, `users/${user.uid}`), {
-                deviceId: null,
-                deviceLocation: null,
-                deviceAssignedAt: null,
-            });
-
+            await update(ref(db, `users/${user.uid}`), { deviceId: null, deviceName: null, deviceAssignedAt: null });
             if (deviceId) await remove(ref(db, `devices/${deviceId}`));
-
             currentDeviceId = null;
-            updateDeviceBadge(null);
+            updateDeviceBadge(null, null);
             await loadCurrentDeviceStatus();
-
-            // Show success
-            overlay.querySelector('div').innerHTML = `
-                <div style="font-size:40px;margin-bottom:12px;">✅</div>
-                <h3 style="margin-bottom:8px;color:#2d6a4f;font-size:18px;">Na-disconnect na!</h3>
-                <p style="color:#666;font-size:14px;">Ang iyong device ay matagumpay na na-disconnect.</p>
-            `;
-
+            overlay.querySelector('div').innerHTML = `<div style="font-size:40px;margin-bottom:12px;">✅</div><h3 style="margin-bottom:8px;color:#2d6a4f;font-size:18px;">Na-disconnect na!</h3><p style="color:#666;font-size:14px;">Ang iyong device ay matagumpay na na-disconnect.</p>`;
             setTimeout(() => overlay.remove(), 1500);
             showNotification("Device disconnected.", "off");
-
         } catch (e) {
             overlay.remove();
             showPopup("Error sa pag-disconnect ng device: " + e.message);
         }
     });
 }
-
 function updateCurrentDate() {
     const now = new Date();
     const dateElement = document.getElementById("current-date");
@@ -893,7 +745,7 @@ function updateLightStatus(status) {
     const lightValueElement = document.getElementById("light-status");
     if (!lightValueElement) return;
     if (status === "--" || status === null || status === undefined) lightValueElement.textContent = "--";
-    else if (status === 1 || status === "Light" || status === "Maliwanag") lightValueElement.textContent = "Light";
+    else if (status === 1 || status === "Light" || status === "LIGHT" || status === "Maliwanag") lightValueElement.textContent = "Light";
     else lightValueElement.textContent = "Dark";
 }
 
@@ -901,28 +753,20 @@ function updateSoilMoistureStatus(moistureLevel) {
     const statusElement = document.getElementById("soil-moisture-status");
     if (!statusElement) return;
     let status, message, className;
-
-    // Use crop-based range if a crop is selected
     const currentCrop = allCropData[currentCropKey];
     if (currentCrop && currentCrop.moisture && currentCrop.moisture.min > 0) {
         const min = currentCrop.moisture.min;
         const max = currentCrop.moisture.max;
-        if (moistureLevel < min) {
-            status = "Mababa"; message = "Kailangan ng Patubig"; className = "status-moderate";
-        } else if (moistureLevel > max) {
-            status = "Mataas"; message = "Bawasan ang Tubig"; className = "status-saturated";
-        } else {
-            status = "Mainam"; message = "Perpektong kondition ng pag kabasa ng lupa"; className = "status-optimal";
-        }
+        if (moistureLevel < min) { status = "Mababa"; message = "Kailangan ng Patubig"; className = "status-moderate"; }
+        else if (moistureLevel > max) { status = "Mataas"; message = "Bawasan ang Tubig"; className = "status-saturated"; }
+        else { status = "Mainam"; message = "Perpektong kondition ng pag kabasa ng lupa"; className = "status-optimal"; }
     } else {
-        // Fallback: fixed thresholds if no crop selected
         if (moistureLevel < 20) { status = "Sobrang tuyo"; message = "Kailangan agad ng Patubig"; className = "status-dry"; }
         else if (moistureLevel < 40) { status = "Tuyot"; message = "Kailangan ng Patubig"; className = "status-moderate"; }
         else if (moistureLevel < 60) { status = "Mainam"; message = "Perpektong kondition ng pag kabasa ng lupa"; className = "status-optimal"; }
         else if (moistureLevel < 80) { status = "Basa"; message = "Sapat na kahalumigmigan"; className = "status-wet"; }
         else { status = "Sobra sa tubig"; message = "Bawasan ang Tubig"; className = "status-saturated"; }
     }
-
     statusElement.className = `moisture-status ${className}`;
     statusElement.innerHTML = `<p>Pagkabasa ng lupa: <b>${status}</b></p><small>${message}</small>`;
 }
@@ -956,7 +800,6 @@ async function loadActiveCropSelection() {
 function initializePumpControls() {
     const pumpSwitch = document.getElementById("pump-switch");
     if (!pumpSwitch) return;
-
     pumpSwitch.addEventListener("change", function () {
         const pumpValue = this.checked ? 1 : 0;
         writePumpControl(pumpValue);
@@ -965,14 +808,8 @@ function initializePumpControls() {
 }
 
 async function writePumpControl(value) {
-    if (!currentDeviceId) {
-        // Try to get deviceId if not yet loaded
-        currentDeviceId = await getDeviceIdForUser();
-    }
-    if (!currentDeviceId) {
-        console.warn("⚠ No deviceId found — cannot write pumpControl");
-        return;
-    }
+    if (!currentDeviceId) { currentDeviceId = await getDeviceIdForUser(); }
+    if (!currentDeviceId) { console.warn("⚠ No deviceId found — cannot write pumpControl"); return; }
     set(ref(db, `pumpControl/${currentDeviceId}/status`), value)
         .then(() => console.log(`✅ pumpControl/${currentDeviceId}/status =`, value))
         .catch((error) => console.error("❌ Error writing pumpControl:", error));
@@ -982,15 +819,11 @@ function listenToPumpControl(deviceId) {
     if (!deviceId) return;
     const pumpSwitch = document.getElementById("pump-switch");
     if (!pumpSwitch) return;
-
     onValue(ref(db, `pumpControl/${deviceId}/status`), (snapshot) => {
         if (!snapshot.exists()) return;
         const val = snapshot.val();
         const isOn = val === 1 || val === "1" || val === true;
-        if (pumpSwitch.checked !== isOn) {
-            pumpSwitch.checked = isOn;
-            console.log(`🔄 pumpControl/${deviceId}/status updated:`, isOn ? "ON" : "OFF");
-        }
+        if (pumpSwitch.checked !== isOn) { pumpSwitch.checked = isOn; console.log(`🔄 pumpControl/${deviceId}/status updated:`, isOn ? "ON" : "OFF"); }
     });
 }
 
@@ -1011,7 +844,7 @@ function initDashboard() {
     updateSoilMoistureStatus(42);
     updateLightStatus("--");
     initializePumpControls();
-    initEmailJS(); // ← initialize EmailJS
+    initEmailJS();
     listenToFirebaseData();
     setTimeout(() => { initializeDataHistory(); }, 500);
 }
@@ -1162,36 +995,28 @@ async function addMockSensorData(overrides = {}) {
     await set(newDataRef, payload);
     return { key: newDataRef.key, payload };
 }
-
 async function addMockNotificationTest(type = "ph-low") {
     const scenarios = { normal: { temperature: 26, soilMoisture: 65, humidity: 65, pH: 6.3, light: "LIGHT" }, "ph-low": { pH: 4.6, light: "DARK" }, "ph-high": { pH: 8.2 }, "temp-high": { temperature: 40.2 }, "moisture-low": { soilMoisture: 20 }, "humidity-high": { humidity: 93 } };
     return addMockSensorData(scenarios[type] || scenarios["ph-low"]);
 }
-
 async function addMockNotificationSequence() {
     await addMockNotificationTest("normal");
     setTimeout(() => addMockNotificationTest("ph-low").catch(console.error), 1200);
 }
-
 window.addMockSensorData = addMockSensorData;
 window.addMockNotificationTest = addMockNotificationTest;
 window.addMockNotificationSequence = addMockNotificationSequence;
 
 //--------------------------------Firebase Data------------------------------------------
-// ── UPDATED: filters by deviceId from users collection ──
 async function listenToFirebaseData() {
     const user = await getResolvedUser();
     if (!user?.uid) { showOfflineState(); return; }
-
-    // Get deviceId assigned to this user via email lookup
     const deviceId = await getDeviceIdForUser();
-    currentDeviceId = deviceId; // ← cache globally
+    currentDeviceId = deviceId;
     console.log("✅ User deviceId for filtering:", deviceId);
-    listenToPumpControl(deviceId); // ← listen per device
-
+    listenToPumpControl(deviceId);
     const dataRef = ref(database, "sensorData");
     const readingsQuery = query(dataRef, limitToLast(50));
-
     onValue(readingsQuery, (snapshot) => {
         if (snapshot.exists()) {
             let historyDataArray = [];
@@ -1201,23 +1026,15 @@ async function listenToFirebaseData() {
                 data.timestamp = getRecordTimestamp(data, childSnapshot.key);
                 historyDataArray.push(data);
             });
-
-            // Filter by deviceId (primary) or user_id (fallback)
-            historyDataArray = historyDataArray.filter((row) =>
-                isRecordOwnedByUser(row, user.uid, deviceId)
-            );
-
+            historyDataArray = historyDataArray.filter((row) => isRecordOwnedByUser(row, user.uid, deviceId));
             if (historyDataArray.length === 0) { updateHistoryTable([]); showOfflineState(); return; }
-
             latestHistoryData = historyDataArray;
             const tableData = [...historyDataArray].reverse();
             updateHistoryTable(tableData);
             if (isGraphMode) updateAllCharts();
-
             const latestReading = historyDataArray[historyDataArray.length - 1];
             const currentTime = Date.now();
             const dataTime = typeof latestReading.timestamp === "number" ? latestReading.timestamp : new Date(latestReading.timestamp).getTime();
-
             if (currentTime - dataTime > 5 * 60 * 1000) { showOfflineState(); }
             else { updateCurrentReadings(latestReading); updateCurrentStatusCards(latestReading); evaluateSensorAlerts(latestReading); }
         } else { showOfflineState(); }
@@ -1263,7 +1080,7 @@ function updateCurrentStatusCards(latestData) {
     if (phEl) phEl.textContent = ph == null ? "N/A pH" : `${ph} pH`;
     if (humidityEl) humidityEl.textContent = humidity == null ? "N/A %" : `${humidity}%`;
     updateSoilMoistureStatus(latestData.moisture || latestData.soilMoisture || 0);
-    updateLightStatus(latestData.light === 1 || latestData.light === "Light" ? 1 : 0);
+    updateLightStatus(latestData.light === 1 || latestData.light === "Light" || latestData.light === "LIGHT" ? 1 : 0);
 }
 
 // Modal handling
@@ -1275,7 +1092,6 @@ function initializeModals() {
     const addCropBtn = document.getElementById("addCropBtn");
     const deleteCropBtn = document.getElementById("deleteCropBtn");
     const closeButtons = document.querySelectorAll(".close-modal");
-
     if (selectCropBtn && selectCropModal) selectCropBtn.addEventListener("click", () => { renderCropOptions(); selectCropModal.style.display = "flex"; });
     if (addCropBtn && addCropModal) addCropBtn.addEventListener("click", () => { addCropModal.style.display = "flex"; });
     closeButtons.forEach((button) => button.addEventListener("click", (event) => { event.target.closest(".modal").style.display = "none"; }));
@@ -1284,7 +1100,6 @@ function initializeModals() {
         if (event.target === addCropModal) addCropModal.style.display = "none";
         if (event.target === editDeleteCropModal) editDeleteCropModal.style.display = "none";
     });
-
     document.getElementById("confirmCropBtn").addEventListener("click", async () => {
         const selectedOption = document.querySelector("#selectCropModal .crop-option.selected");
         if (selectedOption) {
@@ -1301,9 +1116,7 @@ function initializeModals() {
             document.querySelectorAll("#selectCropModal .crop-option").forEach((o) => o.classList.remove("selected"));
         } else { alert("Please select a crop"); }
     });
-
     document.getElementById("addCropForm").addEventListener("submit", (e) => { e.preventDefault(); });
-
     document.getElementById("editCropForm").addEventListener("submit", async (e) => {
         e.preventDefault();
         const cropKey = document.getElementById("editCropKey").value;
@@ -1326,16 +1139,11 @@ function initializeModals() {
             showPopup("Tagumpay! Na-update ang crop.");
         } catch (error) { showPopup("Hindi ma-update ang crop: " + error.message); }
     });
-
     if (deleteCropBtn) {
         deleteCropBtn.addEventListener("click", async () => {
             const cropKey = document.getElementById("editCropKey").value;
             if (!cropKey) return;
-            const confirmed = await showConfirmPopup(
-                "🌱", "Burahin ang Crop?",
-                `Sigurado ka bang gusto mong burahin ang crop na ito? <br>Hindi na ito mababawi.`,
-                "Kanselahin", "Oo, Burahin"
-            );
+            const confirmed = await showConfirmPopup("🌱", "Burahin ang Crop?", `Sigurado ka bang gusto mong burahin ang crop na ito? <br>Hindi na ito mababawi.`, "Kanselahin", "Oo, Burahin");
             if (!confirmed) return;
             const user = await getResolvedUser();
             if (!user) { showPopup("Mag-login muna bago magbura ng crop."); return; }
@@ -1357,8 +1165,6 @@ async function renderCropOptions() {
     cropGrid.innerHTML = "";
     const user = await getResolvedUser();
     if (!user) { cropGrid.innerHTML = `<div class="crop-selection-empty" style="padding:12px;text-align:center;">Mag-login muna para makita ang iyong crops.</div>`; allCropData = {}; return; }
-
-    // Load custom crops from Firebase
     let customCrops = {};
     try {
         const snapshot = await get(getUserCropsQuery(user.uid));
@@ -1370,17 +1176,11 @@ async function renderCropOptions() {
         cropGrid.innerHTML = `<div class="crop-selection-empty" style="padding:12px;text-align:center;">Hindi ma-load ang iyong crops.</div>`;
         allCropData = {}; return;
     }
-
-    // Merge predefined + custom into allCropData
     allCropData = { ...PREDEFINED_CROP_DATA, ...customCrops };
-
-    // Section label: Default Crops
     const predefinedLabel = document.createElement("div");
     predefinedLabel.style.cssText = "width:100%;font-weight:600;color:#555;font-size:12px;text-transform:uppercase;letter-spacing:1px;padding:4px 0 6px;margin-top:4px;grid-column:1/-1;";
     predefinedLabel.textContent = "Default na Pananim";
     cropGrid.appendChild(predefinedLabel);
-
-    // Render predefined crops (no edit button)
     Object.entries(PREDEFINED_CROP_DATA).forEach(([key, crop]) => {
         const optionDiv = document.createElement("div");
         optionDiv.className = "crop-option predefined";
@@ -1393,14 +1193,11 @@ async function renderCropOptions() {
         });
         cropGrid.appendChild(optionDiv);
     });
-
-    // Section label: My Crops (only if farmer has custom crops)
     if (Object.keys(customCrops).length > 0) {
         const customLabel = document.createElement("div");
         customLabel.style.cssText = "width:100%;font-weight:600;color:#555;font-size:12px;text-transform:uppercase;letter-spacing:1px;padding:4px 0 6px;margin-top:12px;grid-column:1/-1;";
         customLabel.textContent = "Aking Pananim";
         cropGrid.appendChild(customLabel);
-
         Object.entries(customCrops).forEach(([key, crop]) => {
             const optionDiv = document.createElement("div");
             optionDiv.className = "crop-option custom";
@@ -1478,14 +1275,10 @@ function showEmptyState(range) {
     emptyState.innerHTML = `<i class="fas fa-database"></i><h3>Walang Nakuhang Data</h3><p>Walang natagpuang sensor readings ${messages[range] || "sa napiling oras"}.</p>`;
 }
 
-// ── UPDATED loadHistoryData: filters by deviceId ──
 async function loadHistoryData(range) {
     const user = await getResolvedUser();
     if (!user?.uid) { showEmptyState(range); return; }
-
-    // Get deviceId assigned to this user
     const deviceId = await getDeviceIdForUser();
-
     const now = Date.now();
     let startTime, limitCount = 100;
     if (range === "all") { startTime = 0; limitCount = 5000; }
@@ -1494,7 +1287,6 @@ async function loadHistoryData(range) {
         startTime = now - (map[range] || 60*60*1000);
         if (range === "7d") limitCount = 200;
     }
-
     const historyQuery = query(ref(db, dbPath), limitToLast(limitCount));
     try {
         onValue(historyQuery, (snapshot) => {
@@ -1503,13 +1295,10 @@ async function loadHistoryData(range) {
                 const raw = childSnapshot.val() || {};
                 dataArray.push({ id: childSnapshot.key, ...raw, timestamp: getRecordTimestamp(raw, childSnapshot.key) });
             });
-
-            // Filter by deviceId (primary) or user_id (fallback)
             dataArray = dataArray.filter((row) => isRecordOwnedByUser(row, user.uid, deviceId));
             dataArray = dataArray.filter((row) => (row.timestamp || 0) >= startTime);
             dataArray.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
             latestHistoryData = dataArray;
-
             if (dataArray.length === 0) showEmptyState(range);
             else { hideLoadingState(); populateHistoryTable(dataArray); if (isGraphMode) updateAllCharts(); }
         }, { onlyOnce: true });
@@ -1521,7 +1310,6 @@ function populateHistoryTable(dataArray) {
     const table = document.querySelector("#history-table table");
     if (!tbody || !table) return;
     tbody.innerHTML = "";
-
     function getColorClass(value, type) {
         const numValue = parseFloat(value);
         if (isNaN(numValue)) return "";
@@ -1532,12 +1320,10 @@ function populateHistoryTable(dataArray) {
         if (numValue <= r[1]) return r[3];
         return r[4];
     }
-
     function formatValue(value, unit = "") {
         if (!value && value !== 0) return '<span class="offline-status">Offline</span>';
         return value + unit;
     }
-
     dataArray.forEach((row) => {
         const tr = document.createElement("tr");
         const moistureValue = row.soilMoisture || row.moisture;
@@ -1626,18 +1412,47 @@ function renderEnhancedChart(canvasId, label, labels, data, color, yMin, yMax, y
     const ctx = ctxElement.getContext("2d");
     if (chartInstances[canvasId]) { chartInstances[canvasId].destroy(); }
     chartInstances[canvasId] = new Chart(ctx, {
-        type: "bar",
-        data: { labels, datasets: [{ label, data, backgroundColor: color + "99", borderColor: color, borderWidth: 2, borderRadius: 6, borderSkipped: false }] },
+        type: "line",
+        data: {
+            labels,
+            datasets: [{
+                label,
+                data,
+                backgroundColor: color + "22",
+                borderColor: color,
+                borderWidth: 2.5,
+                pointBackgroundColor: color,
+                pointBorderColor: "#fff",
+                pointBorderWidth: 2,
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                fill: true,
+                tension: 0.4,
+            }]
+        },
         options: {
-            responsive: true, maintainAspectRatio: false,
+            responsive: true,
+            maintainAspectRatio: false,
             scales: {
-                y: { min: yMin, max: yMax, beginAtZero: true, grid: { color: "rgba(0,0,0,0.05)" }, ticks: { stepSize: yStep, color: "#6b7280", callback: (v) => v + (label.includes("°C") ? "°C" : label.includes("pH") ? "" : "%") }, title: { display: true, text: "Value", color: "#374151" } },
-                x: { grid: { display: false }, ticks: { color: "#6b7280", maxRotation: 45, minRotation: 45 }, title: { display: true, text: "Oras", color: "#374151" } }
+                y: {
+                    min: yMin, max: yMax, beginAtZero: false,
+                    grid: { color: "rgba(0,0,0,0.05)" },
+                    ticks: { stepSize: yStep, color: "#6b7280", callback: (v) => v + (label.includes("°C") ? "°C" : label.includes("pH") ? "" : "%") },
+                    title: { display: true, text: "Value", color: "#374151" }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { color: "#6b7280", maxRotation: 45, minRotation: 45 },
+                    title: { display: true, text: "Oras", color: "#374151" }
+                }
             },
             plugins: {
                 legend: { display: false },
                 title: { display: true, text: label, font: { size: 16, weight: "bold" }, color: "#1f2937", padding: { bottom: 15, top: 5 } },
-                tooltip: { backgroundColor: "rgba(0,0,0,0.8)", borderColor: color, borderWidth: 2, callbacks: { label: (context) => `${label}: ${context.parsed.y.toFixed(1)}${label.includes("°C") ? "°C" : label.includes("pH") ? "" : "%"}` } }
+                tooltip: {
+                    backgroundColor: "rgba(0,0,0,0.8)", borderColor: color, borderWidth: 2,
+                    callbacks: { label: (context) => `${label}: ${context.parsed.y.toFixed(1)}${label.includes("°C") ? "°C" : label.includes("pH") ? "" : "%"}` }
+                }
             }
         }
     });

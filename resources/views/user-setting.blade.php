@@ -10,7 +10,7 @@
   <meta http-equiv="Expires" content="0">
   <title>AgriKnows - User Settings</title>
   <link rel="stylesheet" href="{{ asset('css/user-setting.css') }}" />
-  </head>
+</head>
 
 <body>
   <div class="dashboard">
@@ -19,7 +19,6 @@
       <header>
         <div class="header-left">
           <div class="logo-title">
-            
             <img src="{{ asset('images/LOGO.png') }}" class="agri-logo" alt="AgriKnows Logo"
               onclick="window.location.href='/welcome'">
           </div>
@@ -34,6 +33,7 @@
         <a href="{{ url('/welcome')}}" class="back-btn">← Back to Home</a>
         <h1>User Settings</h1>
 
+        <!-- User Info Card -->
         <section class="card">
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
             <path fill="#000"
@@ -52,15 +52,19 @@
               <input type="email" value="" id="user-email" />
             </label>
           </div>
+
+          <!-- ✅ SAVE button now inside user info card -->
+          <button class="btn save-btn" id="save-user-info-btn">SAVE</button>
         </section>
 
+        <!-- Password Card -->
         <section class="card">
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
             <path fill="#000"
               d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12c5.16-1.26 9-6.45 9-12V5zm0 4a3 3 0 0 1 3 3a3 3 0 0 1-3 3a3 3 0 0 1-3-3a3 3 0 0 1 3-3m5.13 12A9.7 9.7 0 0 1 12 20.92A9.7 9.7 0 0 1 6.87 17c-.34-.5-.63-1-.87-1.53c0-1.65 2.71-3 6-3s6 1.32 6 3c-.24.53-.53 1.03-.87 1.53" />
           </svg>
 
-         <div class="form-row">
+          <div class="form-row">
             <label for="current-password">
               Kasalukuyang Password
               <div class="password-input-container">
@@ -69,41 +73,39 @@
               </div>
             </label>
           </div>
-          
+
           <div class="form-row">
             <label for="new-password">
               Bagong Password
               <div class="password-input-container">
-              <input type="password" id="new-password" placeholder="Enter new password" />
-              <span class="password-toggle" data-target="new-password">🙈</span>
-            </div>
+                <input type="password" id="new-password" placeholder="Enter new password" />
+                <span class="password-toggle" data-target="new-password">🙈</span>
+              </div>
             </label>
           </div>
-          
+
           <div class="form-row">
             <label for="confirm-password">
-              kumpirmahin ang Password
+              Kumpirmahin ang Password
               <div class="password-input-container">
-              <input type="password" id="confirm-password" placeholder="Confirm new password" />
-              <span class="password-toggle" data-target="confirm-password">🙈</span>
-            </div>
+                <input type="password" id="confirm-password" placeholder="Confirm new password" />
+                <span class="password-toggle" data-target="confirm-password">🙈</span>
+              </div>
             </label>
           </div>
-          
+
           <button class="btn" id="save-password-btn">Save Password</button>
         </section>
 
+        <!-- Logout only -->
         <div class="button-row">
-          <button class="btn save-btn" id="save-user-info-btn">SAVE</button>
           <button class="btn logout-btn" id="logout-btn">Log Out</button>
         </div>
 
-        </section>
-        </main>
-      </div>
+      </main>
     </div>
   </div>
-  
+
   <script type="module" src="{{ asset('js/user-setting.js') }}"></script>
 </body>
 
