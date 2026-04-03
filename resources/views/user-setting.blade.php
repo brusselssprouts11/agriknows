@@ -54,7 +54,7 @@
           </div>
 
           <!-- ✅ SAVE button now inside user info card -->
-          <button class="btn save-btn" id="save-user-info-btn">SAVE</button>
+          <button class="btn save-btn" id="save-user-info-btn">Save</button>
         </section>
 
         <!-- Password Card -->

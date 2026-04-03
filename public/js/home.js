@@ -447,7 +447,7 @@ function updateCurrentReadings(sensorData) {
     const moisture = sensorData.moisture > 0 || sensorData.soilMoisture > 0 ? sensorData.moisture || sensorData.soilMoisture : "--";
     const humidity = sensorData.humidity > 0 ? sensorData.humidity : "--";
     const ph = sensorData.ph > 0 || sensorData.pH > 0 ? sensorData.ph || sensorData.pH : "--";
-    const light = sensorData.light || sensorData.light_status || 0;
+    const light = sensorData.light || sensorData.lightStatus || sensorData.light_status || 0;
     document.getElementById("current-temperature").textContent = temp === "--" ? "-- °C" : `${temp} °C`;
     document.getElementById("current-soil-moisture").textContent = moisture === "--" ? "-- %" : `${moisture}%`;
     document.getElementById("current-humidity").textContent = humidity === "--" ? "-- %" : `${humidity}%`;
@@ -480,13 +480,13 @@ function updateStatusElement(elementId, value, min, max, unit) {
     if (value < min) {
         text = "Mababa"; className += " status-warning";
         if (!lastPopupTime[elementId] || now - lastPopupTime[elementId] > POPUP_COOLDOWN) {
-            showPopup(`⚠ <b>Babala!</b><br>Ang kasalukuyang halaga (<b>${value}${unit}</b>) ay mas mababa kaysa sa itinakdang minimum (<b>${min}${unit}</b>).`);
+            showPopup(`<br>Ang kasalukuyang halaga (<b>${value}${unit}</b>) ay mas mababa kaysa sa itinakdang minimum (<b>${min}${unit}</b>).`);
             lastPopupTime[elementId] = now;
         }
     } else if (value > max) {
         text = "Mataas"; className += " status-danger";
         if (!lastPopupTime[elementId] || now - lastPopupTime[elementId] > POPUP_COOLDOWN) {
-            showPopup(`🚨 <b>Babala!</b><br>Ang kasalukuyang halaga (<b>${value}${unit}</b>) ay mas mataas kaysa sa itinakdang maximum (<b>${max}${unit}</b>).`);
+            showPopup(`<br>Ang kasalukuyang halaga (<b>${value}${unit}</b>) ay mas mataas kaysa sa itinakdang maximum (<b>${max}${unit}</b>).`);
             lastPopupTime[elementId] = now;
         }
     } else {

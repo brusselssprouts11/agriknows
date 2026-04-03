@@ -228,8 +228,9 @@
                     </div>
 
                     <!-- Profile -->
-                    <img src="{{ asset('images/profile.png') }}" class="user-profile" alt="User Profile"
-                        onclick="window.location.href='{{ url('/user-setting') }}'">
+                    <a href="{{ url('/user-setting') }}">
+                        <img src="{{ asset('images/profile.png') }}" class="user-profile" alt="User Profile">
+                    </a>
                 </div>
             </div>
         </header>
