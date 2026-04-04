@@ -552,6 +552,11 @@
                     </table>
                 </div>
                 <div id="history-graph" class="history-graph hidden">
+                    <div id="graph-empty-state" class="history-empty graph-empty-state hidden">
+                        <i class="fas fa-database"></i>
+                        <h3>Walang Nakuhang Data</h3>
+                        <p>Walang natagpuang sensor readings sa napiling oras.</p>
+                    </div>
                     <div class="graph-container"><canvas id="soil-moisture-chart"></canvas></div>
                     <div class="graph-container"><canvas id="humidity-chart"></canvas></div>
                     <div class="graph-container"><canvas id="temperature-chart"></canvas></div>

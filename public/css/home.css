@@ -917,6 +917,19 @@ input:checked + .slider:before { transform: translateX(26px); }
 
 #history-graph.hidden { display: none !important; }
 
+/* Empty state inside graph mode — spans full width across all columns */
+.graph-empty-state {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 50px 20px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
 .graph-container {
     background: white;
     border-radius: 12px;

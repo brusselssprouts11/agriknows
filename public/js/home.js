@@ -1261,6 +1261,11 @@ function hideLoadingState() {
     if (loadingDiv) loadingDiv.style.display = "none";
     if (emptyState) emptyState.remove();
     if (table) table.style.display = "table";
+    // Hide graph empty state and restore chart containers
+    const graphEmptyState = document.getElementById("graph-empty-state");
+    if (graphEmptyState) graphEmptyState.classList.add("hidden");
+    const graphContainers = document.querySelectorAll("#history-graph .graph-container");
+    graphContainers.forEach((c) => { c.style.display = ""; });
 }
 
 function showEmptyState(range) {
@@ -1273,6 +1278,15 @@ function showEmptyState(range) {
     let emptyState = historyTable.querySelector(".history-empty");
     if (!emptyState) { emptyState = document.createElement("div"); emptyState.className = "history-empty"; historyTable.appendChild(emptyState); }
     emptyState.innerHTML = `<i class="fas fa-database"></i><h3>Walang Nakuhang Data</h3><p>Walang natagpuang sensor readings ${messages[range] || "sa napiling oras"}.</p>`;
+    // Also update and show the graph empty state
+    const graphEmptyState = document.getElementById("graph-empty-state");
+    if (graphEmptyState) {
+        graphEmptyState.querySelector("p").textContent = `Walang natagpuang sensor readings ${messages[range] || "sa napiling oras"}.`;
+        graphEmptyState.classList.remove("hidden");
+    }
+    // Hide the chart containers when there is no data
+    const graphContainers = document.querySelectorAll("#history-graph .graph-container");
+    graphContainers.forEach((c) => { c.style.display = "none"; });
 }
 
 async function loadHistoryData(range) {
@@ -1397,7 +1411,15 @@ function showNotification(message, type) {
 }
 
 function updateAllCharts() {
-    if (!latestHistoryData?.length) return;
+    const graphEmptyState = document.getElementById("graph-empty-state");
+    const graphContainers = document.querySelectorAll("#history-graph .graph-container");
+    if (!latestHistoryData?.length) {
+        if (graphEmptyState) graphEmptyState.classList.remove("hidden");
+        graphContainers.forEach((c) => { c.style.display = "none"; });
+        return;
+    }
+    if (graphEmptyState) graphEmptyState.classList.add("hidden");
+    graphContainers.forEach((c) => { c.style.display = ""; });
     const dataToGraph = [...latestHistoryData].slice(-15).reverse();
     const labels = dataToGraph.map((d) => { const parts = formatTimestamp(d.timestamp || d.id).split(" "); return parts.length >= 2 ? parts.slice(1).join(" ") : parts[0]; });
     renderEnhancedChart("soil-moisture-chart", "Pagkabasa ng Lupa (%)", labels, dataToGraph.map((d) => d.soilMoisture || d.moisture || 0), "#3498db", 0, 100, 10);
