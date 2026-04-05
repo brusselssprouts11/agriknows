@@ -9,6 +9,206 @@
     <link rel="stylesheet" href="{{ asset('css/home.css') }}">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+    <style>
+        #addDeviceBtn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 7px 14px;
+        background: #d8f3dc;
+        color: #2d6a4f;
+        border: 1.5px solid #52b788;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        font-family: inherit;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+        }
+        
+    #addDeviceBtn:hover {
+        background: #52b788;
+        color: white;
+    }
+
+    #addDeviceBtn i {
+        font-size: 13px;
+        }
+
+    /* ── Device Modal Overrides ── */
+    #deviceModal {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 1100;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+    }
+
+    #deviceModal .modal-content {
+        background: #fff;
+        order-radius: 14px;
+        box-shadow: 0 12px 40px rgba(0,0,0,0.18);
+        width: 100%;
+        max-width: 420px;
+        padding: 28px 28px 24px;
+        position: relative;
+    }
+            
+    #deviceModal .modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 20px;
+        gap: 10px;
+    }
+            
+    #deviceModal .modal-title {
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: #1b4332;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+        
+    #closeDeviceModal {
+        background: none;
+        border: none;
+        font-size: 1.4rem;
+        cursor: pointer;
+        color: #6b7280;
+        line-height: 1;
+        padding: 0;
+        flex-shrink: 0;
+    }
+            
+    #closeDeviceModal:hover { 
+        color: #111; 
+    }
+
+            /* Connected status box */
+    #currentDeviceStatus {
+        background: #d8f3dc;
+        border: 1.5px solid #b7e4c7;
+        border-radius: 10px;
+        padding: 14px 16px;
+        margin-bottom: 16px;
+        display: none;
+    }
+            
+    #currentDeviceStatus .device-status-title {
+        font-weight: 700;
+        color: #2d6a4f;
+        margin-bottom: 10px;
+        font-size: 0.95rem;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+            
+    #currentDeviceStatus .device-status-row {
+        display: flex;
+        gap: 6px;
+        font-size: 0.88rem;
+        color: #374151;
+        margin-bottom: 4px;
+    }
+        
+    #currentDeviceStatus .device-status-row b {
+        color: #1b4332;
+        min-width: 80px;
+    }
+            
+    #currentDeviceStatus .device-status-row span {
+        font-family: monospace;
+        color: #1b4332;
+        word-break: break-all;
+    }
+
+    /* Connect form */
+    #connectDeviceSection p.hint-text {
+        color: #6b7280;
+        font-size: 0.85rem;
+        margin-bottom: 16px;
+        line-height: 1.5;
+    }
+            
+    #connectDeviceSection .optional-label {
+        color: #9ca3af;
+        font-weight: 400;
+        Font-size: 0.8rem;
+        margin-left: 4px;
+    }
+
+            /* Error message */
+    #deviceErrorMsg {
+        display: none;
+        color: #c0392b;
+        font-size: 0.82rem;
+        margin-bottom: 10px;
+        padding: 8px 10px;
+        background: #fef2f2;
+        border-radius: 6px;
+        border-left: 3px solid #c0392b;
+    }
+
+    /* Confirm / disconnect buttons */
+    #confirmDeviceBtn {
+        width: 100%;
+        margin-top: 8px;
+        padding: 11px;
+        background: #2e7d32;
+        color: #fff;
+        border: none;
+        border-radius: 9px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        font-family: inherit;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: background 0.2s;
+    }
+    #confirmDeviceBtn:hover { 
+        background: #1b5e20;
+    }
+            
+    #confirmDeviceBtn:disabled { 
+        background: #9ca3af; 
+        cursor: not-allowed;
+    }
+
+    #removeDeviceBtn {
+        display: none;
+        width: 100%;
+        margin-top: 10px;
+        padding: 11px;
+        background: #fee2e2;
+        color: #c0392b;
+        border: 1.5px solid #fca5a5;
+        border-radius: 9px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        font-family: inherit;
+        cursor: pointer;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: all 0.2s;
+    }
+            
+    #removeDeviceBtn:hover{ 
+        background: #c0392b; 
+        color: #fff; 
+        border-color: #c0392b;
+    }
+    </style>
 </head>
 <body>
     <div class="container">
