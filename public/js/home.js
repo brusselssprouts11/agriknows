@@ -244,9 +244,9 @@ const DEFAULT_SENSOR_THRESHOLDS = {
 
 const PREDEFINED_CROP_DATA = {
     corn:     { name: "Corn",     temperature: { min: 18, max: 30 }, moisture: { min: 50, max: 70 }, ph: { min: 5.8, max: 7.0 }, humidity: { min: 50, max: 70 } },
-    rice:     { name: "Rice",     temperature: { min: 20, max: 35 }, moisture: { min: 70, max: 90 }, ph: { min: 5.0, max: 6.5 }, humidity: { min: 70, max: 85 } },
+    rice:     { name: "Rice",     temperature: { min: 20, max: 35 }, moisture: { min: 60, max: 80 }, ph: { min: 5.0, max: 7.0 }, humidity: { min: 80, max: 90 } },
     eggplant: { name: "Eggplant", temperature: { min: 20, max: 30 }, moisture: { min: 60, max: 80 }, ph: { min: 5.5, max: 6.8 }, humidity: { min: 50, max: 70 } },
-    tomato:   { name: "Tomato",   temperature: { min: 18, max: 27 }, moisture: { min: 60, max: 80 }, ph: { min: 5.5, max: 6.8 }, humidity: { min: 65, max: 85 } },
+    tomato:   { name: "Tomato",   temperature: { min: 18, max: 29 }, moisture: { min: 50, max: 60 }, ph: { min: 6.2, max: 6.8 }, humidity: { min: 50, max: 70 } },
     onion:    { name: "Onion",    temperature: { min: 15, max: 30 }, moisture: { min: 60, max: 80 }, ph: { min: 6.0, max: 7.0 }, humidity: { min: 50, max: 70 } },
 };
 
@@ -761,11 +761,11 @@ function updateSoilMoistureStatus(moistureLevel) {
         else if (moistureLevel > max) { status = "Mataas"; message = "Bawasan ang Tubig"; className = "status-saturated"; }
         else { status = "Mainam"; message = "Perpektong kondition ng pag kabasa ng lupa"; className = "status-optimal"; }
     } else {
-        if (moistureLevel < 20) { status = "Sobrang tuyo"; message = "Kailangan agad ng Patubig"; className = "status-dry"; }
-        else if (moistureLevel < 40) { status = "Tuyot"; message = "Kailangan ng Patubig"; className = "status-moderate"; }
-        else if (moistureLevel < 60) { status = "Mainam"; message = "Perpektong kondition ng pag kabasa ng lupa"; className = "status-optimal"; }
-        else if (moistureLevel < 80) { status = "Basa"; message = "Sapat na kahalumigmigan"; className = "status-wet"; }
-        else { status = "Sobra sa tubig"; message = "Bawasan ang Tubig"; className = "status-saturated"; }
+        if (moistureLevel < 20) { status = "Sobrang tuyo"; message = " Kailangan agad ng Patubig"; className = "status-dry"; }
+        else if (moistureLevel < 40) { status = "Tuyot"; message = " Kailangan ng Patubig"; className = "status-moderate"; }
+        else if (moistureLevel < 60) { status = "Mainam"; message = " Perpektong kondition ng pag kabasa ng lupa"; className = "status-optimal"; }
+        else if (moistureLevel < 80) { status = "Basa"; message = " Sapat na kahalumigmigan"; className = "status-wet"; }
+        else { status = "Sobra sa tubig"; message = " Bawasan ang Tubig"; className = "status-saturated"; }
     }
     statusElement.className = `moisture-status ${className}`;
     statusElement.innerHTML = `<p>Pagkabasa ng lupa: <b>${status}</b></p><small>${message}</small>`;

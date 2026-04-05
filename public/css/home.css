@@ -2,6 +2,12 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+
+}
+
+html, body {
+    /* Prevent the page itself from scrolling horizontally */
+    overflow-x: hidden;
 }
 
 html {
@@ -25,7 +31,7 @@ header {
     border-bottom: 3px solid #ddd;
     margin-bottom: 20px;
     gap: 10px;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     min-height: 60px;
     position: sticky;
     top: 0;
@@ -67,7 +73,10 @@ header {
     text-overflow: ellipsis;
 }
 
-::-webkit-scrollbar {
+/* Scrollbar hidden only inside the data table, not globally */
+.history-table::-webkit-scrollbar-track,
+.notif-dropdown::-webkit-scrollbar-track,
+.modal-content::-webkit-scrollbar-track {
     display: none;
 }
 
@@ -280,7 +289,7 @@ header {
     display: flex;
     flex-direction: column;
     min-height: 100vh;
-    overflow-x: hidden;
+    /* overflow-x: hidden removed — clips content on mobile & breaks sticky header */
 }
 
 #current-date {
@@ -352,6 +361,7 @@ header {
 .pump-control {
     display: inline-flex;
     align-items: center;
+    justify-content: space-between;
     gap: 8px;
     background-color: #f1ecec;
     padding: 6px 12px;
@@ -581,7 +591,11 @@ header {
     flex-shrink: 0;
 }
 
-.switch input { opacity: 0; width: 0; height: 0; }
+.switch input { 
+    opacity: 0;
+    width: 0;
+    height: 0; 
+}
 
 .slider {
     position: absolute;
@@ -847,7 +861,7 @@ input:checked + .slider:before { transform: translateX(26px); }
 .history-table table {
     width: 100%;
     border-collapse: collapse;
-    min-width: 680px;
+    min-width: 100%;
 }
 
 .history-table table thead th {
@@ -990,17 +1004,211 @@ footer {
     word-break: break-word;
 }
 
+#addDeviceBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    background: #d8f3dc;
+    color: #2d6a4f;
+    border: 1.5px solid #52b788;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    }
+    
+#addDeviceBtn:hover {
+    background: #52b788;
+     color: white;
+}
+
+#addDeviceBtn i {
+    font-size: 13px;
+    }
+
+/* ── Device Modal Overrides ── */
+#deviceModal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 1100;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+}
+
+#deviceModal .modal-content {
+    background: #fff;
+    order-radius: 14px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.18);
+    width: 100%;
+    max-width: 420px;
+    padding: 28px 28px 24px;
+    position: relative;
+}
+        
+#deviceModal .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    gap: 10px;
+}
+        
+#deviceModal .modal-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #1b4332;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+    
+#closeDeviceModal {
+    background: none;
+    border: none;
+    font-size: 1.4rem;
+    cursor: pointer;
+    color: #6b7280;
+    line-height: 1;
+    padding: 0;
+    flex-shrink: 0;
+}
+        
+#closeDeviceModal:hover { 
+    color: #111; 
+}
+
+        /* Connected status box */
+#currentDeviceStatus {
+    background: #d8f3dc;
+    border: 1.5px solid #b7e4c7;
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+    display: none;
+}
+        
+#currentDeviceStatus .device-status-title {
+    font-weight: 700;
+    color: #2d6a4f;
+    margin-bottom: 10px;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+        
+#currentDeviceStatus .device-status-row {
+    display: flex;
+    gap: 6px;
+    font-size: 0.88rem;
+    color: #374151;
+    margin-bottom: 4px;
+}
+       
+#currentDeviceStatus .device-status-row b {
+    color: #1b4332;
+    min-width: 80px;
+}
+        
+#currentDeviceStatus .device-status-row span {
+    font-family: monospace;
+    color: #1b4332;
+    word-break: break-all;
+}
+
+/* Connect form */
+#connectDeviceSection p.hint-text {
+    color: #6b7280;
+    font-size: 0.85rem;
+    margin-bottom: 16px;
+    line-height: 1.5;
+}
+        
+#connectDeviceSection .optional-label {
+    color: #9ca3af;
+    font-weight: 400;
+    Font-size: 0.8rem;
+    margin-left: 4px;
+}
+
+        /* Error message */
+#deviceErrorMsg {
+    display: none;
+    color: #c0392b;
+    font-size: 0.82rem;
+    margin-bottom: 10px;
+    padding: 8px 10px;
+    background: #fef2f2;
+    border-radius: 6px;
+    border-left: 3px solid #c0392b;
+}
+
+/* Confirm / disconnect buttons */
+#confirmDeviceBtn {
+    width: 100%;
+    margin-top: 8px;
+    padding: 11px;
+    background: #2e7d32;
+    color: #fff;
+    border: none;
+    border-radius: 9px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: background 0.2s;
+}
+#confirmDeviceBtn:hover { 
+    background: #1b5e20;
+}
+        
+#confirmDeviceBtn:disabled { 
+    background: #9ca3af; 
+    cursor: not-allowed;
+}
+
+#removeDeviceBtn {
+    display: none;
+    width: 100%;
+    margin-top: 10px;
+    padding: 11px;
+    background: #fee2e2;
+    color: #c0392b;
+    border: 1.5px solid #fca5a5;
+    border-radius: 9px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s;
+}
+        
+#removeDeviceBtn:hover{ 
+    background: #c0392b; 
+    color: #fff; 
+    border-color: #c0392b;
+}
+
 /* ================================================================
    TABLET  ≤ 900px
    ================================================================ */
 @media (max-width: 900px) {
-    .current-status-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-
-    #history-graph {
-        grid-template-columns: 1fr;
-    }
+    .current-status-grid { grid-template-columns: repeat(2, 1fr); }
+    #history-graph        { grid-template-columns: 1fr; }
 }
 
 /* ================================================================
@@ -1008,304 +1216,88 @@ footer {
    ================================================================ */
 @media (max-width: 600px) {
 
-    /* ── Header ── */
-    header {
-        padding: 10px 12px;
-        margin-bottom: 14px;
-        gap: 8px;
-    }
+    header { padding: 9px 12px; margin-bottom: 14px; gap: 6px; min-height: 52px; }
+    .agri-logo      { height: 34px; }
+    .header-left h1 { font-size: 1.15rem; }
+    .header-right > div:first-child { display: none; }
+    .header-icons { gap: 6px; }
 
-    .header-left h1 {
-        font-size: 1.25rem;
-    }
+    #addDeviceBtn  { padding: 4px 8px; font-size: 0.68rem; max-width: 100px; gap: 3px; }
+    #addDeviceBtn i { font-size: 11px; }
+    #deviceBadge   { font-size: 9px; max-width: 55px; }
 
-    .agri-logo {
-        height: 36px;
-    }
+    .notif-bell-btn     { width: 34px; height: 34px; min-width: 34px; }
+    .notif-bell-btn i   { font-size: 14px; }
+    .notif-dropdown     { right: 0; width: 260px; }
+    .user-profile       { width: 34px; height: 34px; }
 
-    .header-right > div:first-child {
-        display: none;
-    }
+    .crop-management { padding: 14px; gap: 12px; }
 
-    .header-icons {
-        gap: 6px;
-    }
+    /* crop buttons: full-width, stacked */
+    .crop-controls { flex-direction: column; gap: 8px; }
+    .select-crop   { width: 100%; font-size: 0.9rem; height: 42px; }
+    .pump-control  { width: 100%; height: 42px; }
 
-    .notif-bell-btn {
-        width: 32px;
-        height: 32px;
-    }
+    .crop-info { flex-direction: column; align-items: flex-start; padding: 14px; gap: 10px; }
+    .moisture-status { width: 100%; font-size: 0.82rem; padding: 8px 10px; border-radius: 14px; white-space: normal; text-align: center; }
 
-    #addDeviceBtn {
-        padding: 4px 8px;
-        font-size: 0.65rem;
-        max-width: 90px;
-    }
+    .current-status      { padding: 14px; }
+    .current-status-grid { grid-template-columns: 1fr; gap: 12px; }
+    .reading-card        { padding: 14px; }
+    .value               { font-size: clamp(1.2rem, 6vw, 1.6rem); }
 
-    #deviceBadge {
-        font-size: 9px;
-        max-width: 50px;
-    }
+    .data-history { padding: 14px; }
+    .history-controls { flex-direction: column; align-items: stretch; gap: 10px; }
 
-    .notif-dropdown {
-        right: 0;
-        width: 260px;
-        font-size: 0.85rem;
-    }
+    .time-filters { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; width: 100%; }
+    .time-filter  { padding: 6px 2px; font-size: 0.7rem; text-align: center; border-radius: 7px; border-width: 1.5px; }
 
-    .user-profile {
-        width: 32px;
-        height: 32px;
-    }
+    .history-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; }
+    .export-btn, .graph-mode-btn { width: 100%; justify-content: center; font-size: 0.78rem; padding: 9px 4px; }
 
-    /* ── Crop management ── */
-    .crop-management {
-        padding: 14px;
-        gap: 12px;
-    }
+    .history-table        { max-height: none; overflow: visible; scrollbar-gutter: auto; }
+    .history-table table  { display: none !important; }
+    .history-table-mobile { display: block; }
 
-    .crop-controls {
-        gap: 8px;
-    }
+    #history-graph          { grid-template-columns: 1fr; padding: 10px; gap: 12px; }
+    .graph-container        { min-height: 260px; padding: 12px; }
+    .graph-container canvas { height: 210px !important; }
 
-    .select-crop {
-        flex: 1 1 calc(50% - 4px);
-        width: auto;
-        font-size: 20px;
-        height: 38px;
-    }
+    .modal         { padding: 10px 8px; align-items: flex-start; }
+    .modal-content { padding: 16px 14px; max-height: calc(100vh - 20px); }
+    .modal-title   { font-size: 1.1rem; }
+    .range-inputs  { gap: 7px; }
+    .crop-grid     { grid-template-columns: repeat(2, 1fr); }
 
-    .pump-control {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-    background-color: #f1ecec;
-    padding: 6px 12px;
-    border-radius: 10px;
-    height: 40px;
-    }
+    #popup  { width: 92%; padding: 16px 16px 52px; }
+    footer  { margin-top: 20px; padding: 12px; }
 
-    /* ── Crop info ── */
-    .crop-info {
-        flex-direction: column;
-        align-items: flex-start;
-        padding: 14px;
-        gap: 10px;
-    }
-
-    .moisture-status {
-        width: 100%;
-        justify-content: center;
-        font-size: 0.85rem;
-        padding: 8px 12px;
-        border-radius: 14px;
-    }
-
-    /* ── Current status ── */
-    .current-status {
-        padding: 14px;
-    }
-
-    .current-status-grid {
-        grid-template-columns: 1fr;
-        gap: 12px;
-    }
-
-    .reading-card {
-        padding: 14px;
-
-    }
-
-    .value { font-size: 1.5rem; }
-
-    /* ── Data history ── */
-    .data-history {
-        padding: 14px;
-    }
-
-    .history-controls {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 10px;
-    }
-
-    .time-filters {
-        display: grid;
-        grid-template-columns: repeat(5, 1fr);
-        gap: 5px;
-        width: 100%;
-    }
-
-    .time-filter {
-        padding: 7px 4px;
-        font-size: 0.75rem;
-        text-align: center;
-        border-radius: 7px;
-    }
-
-    .history-actions {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 8px;
-    }
-
-    .export-btn,
-    .graph-mode-btn {
-        width: 100%;
-        justify-content: center;
-        font-size: 0.82rem;
-        padding: 9px 8px;
-    }
-
-    .history-table th,
-    .history-table td {
-        font-size: 0.75rem;
-        padding: 8px 6px;
-    }
-
-    /* ── Graph ── */
-    #history-graph {
-        grid-template-columns: 1fr;
-        padding: 10px;
-        gap: 12px;
-    }
-
-    .graph-container {
-        min-height: 260px;
-        padding: 12px;
-    }
-
-    .graph-container canvas {
-        height: 210px !important;
-    }
-
-    /* ── Modal ── */
-    .modal {
-        padding: 10px 8px;
-        align-items: flex-start;
-    }
-
-    .modal-content {
-        padding: 16px 14px;
-        max-height: calc(100vh - 20px);
-    }
-
-    .modal-title { font-size: 1.1rem; }
-
-    .range-inputs { gap: 7px; }
-
-    .crop-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-
-    /* ── Popup ── */
-    #popup {
-        width: 92%;
-        padding: 16px 16px 52px;
-    }
-
-    /* ── Footer ── */
-    footer {
-        margin-top: 20px;
-        padding: 12px;
-    }
-
-    /* Buttons that must stay auto-width */
-    .select-crop,
-    .btn-confirm,
-    .btn-add,
-    .btn-delete,
-    .export-btn,
-    .graph-mode-btn,
-    .time-filter,
-    #addDeviceBtn,
-    .notif-bell-btn,
-    #popup-btn {
-        width: auto;
-    }
-
-    /* Buttons that must be full-width */
-    #confirmCropBtn,
-    #saveBtn,
-    #confirmDeviceBtn,
-    #removeDeviceBtn,
-    #deleteCropBtn,
-    .history-actions .export-btn,
-    .history-actions .graph-mode-btn {
-        width: 100%;
-    }
+    /* Full-width buttons */
+    #confirmCropBtn, #saveBtn, #confirmDeviceBtn, #removeDeviceBtn, #deleteCropBtn { width: 100%; }
 }
 
 /* ================================================================
    VERY SMALL  ≤ 380px
    ================================================================ */
 @media (max-width: 380px) {
+    .header-left h1 { font-size: 1rem; }
+    .agri-logo      { height: 30px; }
 
-    .header-left h1 {
-        font-size: 1.1rem;
-    }
+    #deviceBadge  { display: none; }
+    #addDeviceBtn { padding: 0; width: 32px; height: 32px; min-width: 32px; border-radius: 50%; justify-content: center; max-width: 32px; }
+    .notif-bell-btn { width: 30px; height: 30px; min-width: 30px; }
+    .user-profile   { width: 30px; height: 30px; }
 
-    .notif-bell-btn {
-        width: 28px;
-        height: 28px;
-    }
-
-    .agri-logo {
-        height: 32px;
-    }
-
-    #addDeviceBtn span {
-        display: none;
-    }
-
-    #addDeviceBtn {
-        padding: 6px;
-        border-radius: 50%;
-        width: 34px;
-        height: 34px;
-        justify-content: center;
-    }
-
-    .select-crop {
-        flex: 1 1 calc(50% - 4px);
-        width: auto;
-        font-size: 20px;
-        height: 48px;
-    }
-
-     .pump-control {
-        justify-content: space-between;
-        width: 100%;
-        height: 38px;
-        padding: 0 12px;
-    }
-
-    .time-filter {
-        font-size: 0.7rem;
-        padding: 6px 2px;
-    }
-
-    .value {
-        font-size: 1.35rem;
-    }
+    .select-crop { font-size: 0.85rem; height: 40px; }
+    .time-filter { font-size: 0.64rem; padding: 5px 1px; }
+    .value       { font-size: 1.2rem; }
 }
 
 /* ================================================================
    LANDSCAPE PHONES
    ================================================================ */
 @media (max-height: 500px) and (orientation: landscape) {
-
-    header {
-        min-height: 50px;
-        padding: 0.4rem 0.75rem;
-    }
-
-    .agri-logo {
-        height: 28px;
-    }
-
-    .header-left h1 {
-        font-size: 0.8rem;
-    }
+    header        { min-height: 48px; padding: 6px 12px; }
+    .agri-logo    { height: 28px; }
+    .header-left h1 { font-size: 0.9rem; }
 }
