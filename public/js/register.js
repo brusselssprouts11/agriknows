@@ -39,7 +39,7 @@ async function ensureUserProfileInDatabase(user, preferredName = null, isNew = f
         provider: user.providerData?.[0]?.providerId || "password",
     };
 
-
+/*
     if (isNew) {
         await set(userRef, {
             ...baseData,
@@ -60,9 +60,9 @@ async function ensureUserProfileInDatabase(user, preferredName = null, isNew = f
             rice: {
                 name: "Rice",
                 temperature: { min: 20, max: 35 },
-                moisture: { min: 70, max: 90 },
-                ph: { min: 5.0, max: 6.5 },
-                humidity: { min: 70, max: 85 },
+                moisture: { min: 60, max: 80 },
+                ph: { min: 5.0, max: 7.0 },
+                humidity: { min: 80, max: 90 },
             },
             eggplant: {
                 name: "Eggplant",
@@ -73,10 +73,10 @@ async function ensureUserProfileInDatabase(user, preferredName = null, isNew = f
             },
             tomato: {
                 name: "Tomato",
-                temperature: { min: 18, max: 27 },
-                moisture: { min: 60, max: 80 },
-                ph: { min: 5.5, max: 6.8 },
-                humidity: { min: 65, max: 85 },
+                temperature: { min: 18, max: 29 },
+                moisture: { min: 50, max: 60 },
+                ph: { min: 6.2, max: 6.8 },
+                humidity: { min: 50, max: 70 },
             },
             onion: {
                 name: "Onion",
@@ -86,6 +86,8 @@ async function ensureUserProfileInDatabase(user, preferredName = null, isNew = f
                 humidity: { min: 50, max: 70 },
             },
         };
+
+
         // Save to /crop with user_id
         const db = getDatabase();
         const cropBasePath = ref(db, "crop");
@@ -102,7 +104,7 @@ async function ensureUserProfileInDatabase(user, preferredName = null, isNew = f
         });
         await update(cropBasePath, updates);
         return;
-    }
+    } */
 
     await update(userRef, {
         ...baseData,
