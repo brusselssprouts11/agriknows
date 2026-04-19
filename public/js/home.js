@@ -243,11 +243,11 @@ const DEFAULT_SENSOR_THRESHOLDS = {
 };
 
 const PREDEFINED_CROP_DATA = {
-    corn:     { name: "Corn",     temperature: { min: 18, max: 30 }, moisture: { min: 50, max: 70 }, ph: { min: 5.8, max: 7.0 }, humidity: { min: 50, max: 70 } },
-    rice:     { name: "Rice",     temperature: { min: 20, max: 35 }, moisture: { min: 60, max: 80 }, ph: { min: 5.0, max: 7.0 }, humidity: { min: 80, max: 90 } },
-    eggplant: { name: "Eggplant", temperature: { min: 20, max: 30 }, moisture: { min: 60, max: 80 }, ph: { min: 5.5, max: 6.8 }, humidity: { min: 50, max: 70 } },
-    tomato:   { name: "Tomato",   temperature: { min: 18, max: 29 }, moisture: { min: 50, max: 60 }, ph: { min: 6.2, max: 6.8 }, humidity: { min: 50, max: 70 } },
-    onion:    { name: "Onion",    temperature: { min: 15, max: 30 }, moisture: { min: 60, max: 80 }, ph: { min: 6.0, max: 7.0 }, humidity: { min: 50, max: 70 } },
+    corn:     { name: "Corn",     temperature: { min: 18, max: 28 }, moisture: { min: 75, max: 95 }, ph: { min: 6.0, max: 7.0 }, humidity: { min: 50, max: 80 } },
+    rice:     { name: "Rice",     temperature: { min: 25, max: 35 }, moisture: { min: 80, max: 100 }, ph: { min: 5.0, max: 7.5 }, humidity: { min: 85, max: 90 } },
+    eggplant: { name: "Eggplant", temperature: { min: 24, max: 32 }, moisture: { min: 60, max: 80 }, ph: { min: 6.0, max: 6.8 }, humidity: { min: 65, max: 80 } },
+    tomato:   { name: "Tomato",   temperature: { min: 16, max: 29.5 }, moisture: { min: 70, max: 85 }, ph: { min: 6.0, max: 6.8 }, humidity: { min: 70, max: 90 } },
+    onion:    { name: "Onion",    temperature: { min: 15, max: 29 }, moisture: { min: 50, max: 75 }, ph: { min: 6.0, max: 7.0 }, humidity: { min: 50, max: 60 } },
 };
 
 //---------------------------user input crop selector-------------------------------------
