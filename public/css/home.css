@@ -986,6 +986,114 @@ input:checked + .slider:before { transform: translateX(26px); }
 
 .hidden { display: none !important; }
 
+/*---------------- Status Message Variants ----------------*/
+/* Used by updateStatusElement() — className = "status-message status-good|warning|danger" */
+.status-good    { background: #c6f6d5; color: #276749; }
+.status-warning { background: #feebcb; color: #dd6b20; }
+.status-danger  { background: #fed7d7; color: #c53030; }
+
+/*---------------- Crop Selection Modal ----------------*/
+/* #cropSelectionModal uses the standard .modal shell; these style its inner grid/cards */
+#cropSelectionModal .crops-selection-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 12px;
+    margin-top: 12px;
+    max-height: 55vh;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.crop-selection-card {
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 14px 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.crop-selection-card:hover    { border-color: #2e7d32; background: #f0fdf4; }
+.crop-selection-card.selected { border-color: #2e7d32; background: rgba(46, 125, 50, 0.1); }
+
+.crop-selection-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: #e8f5e9;
+    color: #2e7d32;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.crop-selection-name {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: #2c3e50;
+    word-break: break-word;
+}
+
+/*---------------- Graph Toggle & Export Button IDs ----------------*/
+/* JS uses getElementById("graph-mode-toggle") / getElementById("export-button").
+   Mirror the existing .graph-mode-btn / .export-btn class styles by ID so either
+   form of selector works on the actual HTML elements. */
+#graph-mode-toggle {
+    padding: 8px 14px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.88rem;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+    background: #3b82f6;
+    color: white;
+}
+#graph-mode-toggle:hover { background: #2563eb; }
+
+#export-button {
+    padding: 8px 14px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.88rem;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+    background: #10b981;
+    color: white;
+}
+#export-button:hover { background: #059669; }
+
+/*---------------- Chart Interpretation Divs ----------------*/
+/* Populated by renderVerbalInterpretation() — one below each graph canvas */
+#moisture-interpretation,
+#humidity-interpretation,
+#temperature-interpretation,
+#ph-interpretation {
+    min-height: 0;
+    transition: opacity 0.2s ease;
+}
+
+#moisture-interpretation:empty,
+#humidity-interpretation:empty,
+#temperature-interpretation:empty,
+#ph-interpretation:empty {
+    display: none;
+}
+
 /*---------------- Footer ----------------*/
 footer {
     padding: 14px 0;
@@ -1054,7 +1162,7 @@ footer {
     .time-filter  { padding: 6px 2px; font-size: 0.7rem; text-align: center; border-radius: 7px; border-width: 1.5px; }
 
     .history-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; }
-    .export-btn, .graph-mode-btn { width: 100%; justify-content: center; font-size: 0.78rem; padding: 9px 4px; }
+    .export-btn, .graph-mode-btn, #export-button, #graph-mode-toggle { width: 100%; justify-content: center; font-size: 0.78rem; padding: 9px 4px; }
 
     .history-table        { max-height: none; overflow: visible; scrollbar-gutter: auto; }
     .history-table table  { display: none !important; }

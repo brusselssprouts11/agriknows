@@ -1410,6 +1410,114 @@ function showNotification(message, type) {
     setTimeout(() => notification.remove(), 2000);
 }
 
+// ============================================================
+// STATUS COLORS  (hex values from image — DO NOT change)
+// .status-dry       bg:#fed7d7  color:#c53030
+// .status-moderate  bg:#feebcb  color:#dd6b20
+// .status-optimal   bg:#c6f6d5  color:#276749
+// .status-wet       bg:#bee3f8  color:#2c5aa0
+// .status-saturated bg:#e9d8fd  color:#6b46c1
+// ============================================================
+const STATUS_STYLES = {
+    dry:      { bg: "#fed7d7", color: "#c53030", label: "Tuyo (Dry)",           icon: "🔴" },
+    moderate: { bg: "#feebcb", color: "#dd6b20", label: "Katamtaman (Moderate)", icon: "🟠" },
+    optimal:  { bg: "#c6f6d5", color: "#276749", label: "Mainam (Optimal)",      icon: "🟢" },
+    wet:      { bg: "#bee3f8", color: "#2c5aa0", label: "Basa (Wet)",            icon: "🔵" },
+    saturated:{ bg: "#e9d8fd", color: "#6b46c1", label: "Lubog (Saturated)",     icon: "🟣" },
+};
+
+// Build a verbal message dynamically using the crop's own thresholds so the
+// advice is always correct regardless of how high or low the optimal range is.
+// e.g. rice moisture optimal=80-100%: a reading of 95% is "Mainam", not "saturated/root rot".
+// All "too low / too high" messages reference the crop's actual min/max, not
+// hardcoded agronomic assumptions.
+function getStatusMessage(sensorType, key, optMin, optMax, unit, cropName) {
+    const crop = cropName && cropName !== "Walang napiling pananim" ? cropName : "iyong pananim";
+    const range = `${optMin}–${optMax}${unit}`;
+
+    const templates = {
+        moisture: {
+            dry:      `Ang pagkabasa ng lupa ay masyadong mababa para sa ${crop} (optimal: ${range}). Kailangan ng agad na pagdilig.`,
+            moderate: `Ang pagkabasa ng lupa ay bahagyang mababa pa para sa ${crop} (optimal: ${range}). alalahanin ang pagdilig.`,
+            optimal:  `Ang pagkabasa ng lupa ay nasa mainam na antas para sa ${crop} (${range}). Patuloy ang malusog na paglago.`,
+            wet:      `Ang pagkabasa ng lupa ay bahagyang mataas na para sa ${crop} (optimal: ${range}). Bantayan at bawasan ang pagdilig.`,
+            saturated:`Ang pagkabasa ng lupa ay masyadong mataas para sa ${crop} (optimal: ${range}). Itigil muna ang pagdilig at tiyaking may tamang drainage.`,
+        },
+        humidity: {
+            dry:      `Ang halumigmig ay masyadong mababa para sa ${crop} (optimal: ${range}). Maaaring matuyo ang mga dahon.`,
+            moderate: `Ang halumigmig ay bahagyang mababa pa para sa ${crop} (optimal: ${range}). Maaaring dagdagan pa.`,
+            optimal:  `Ang antas ng halumigmig ay mainam para sa ${crop} (${range}). Angkop para sa malusog na paglago.`,
+            wet:      `Ang halumigmig ay bahagyang mataas para sa ${crop} (optimal: ${range}). Bantayan ang pananim.`,
+            saturated:`Ang halumigmig ay masyadong mataas para sa ${crop} (optimal: ${range}).`,
+        },
+        temperature: {
+            dry:      `Ang temperatura ay masyadong malamig para sa ${crop} (optimal: ${range}). Maaaring mapigilan ang paglaki ng pananim.`,
+            moderate: `Ang temperatura ay bahagyang malamig pa para sa ${crop} (optimal: ${range}). I-monitor nang mabuti.`,
+            optimal:  `Ang temperatura ay nasa mainam na antas para sa ${crop} (${range}). Perpekto para sa aktibong paglago.`,
+            wet:      `Ang temperatura ay bahagyang mainit na para sa ${crop} (optimal: ${range}). Maaaring mag-stress ang pananim.`,
+            saturated:`Ang temperatura ay masyadong mainit para sa ${crop} (optimal: ${range}). Mataas na panganib ng heat stress at pagkalanta.`,
+        },
+        ph: {
+            dry:      `Ang pH ay masyadong mababa (acidity) para sa ${crop} (optimal: ${range}). Maaaring mapigilan ang pagsipsip ng sustansya.`,
+            moderate: `Ang pH ay bahagyang mababa pa para sa ${crop} (optimal: ${range}). I-monitor at isaalang-alang ang pag-aayos ng lupa.`,
+            optimal:  `Ang antas ng pH ay mainam para sa ${crop} (${range}). Madaling masipsip ng pananim ang mga sustansya.`,
+            wet:      `Ang pH ay bahagyang mataas (alkaline) para sa ${crop} (optimal: ${range}). Maaaring mahirapan sa pagsipsip ng ilang sustansya.`,
+            saturated:`Ang pH ay masyadong mataas (alkaline) para sa ${crop} (optimal: ${range}). Kailangan ng soil amendment.`,
+        },
+    };
+
+    return templates[sensorType]?.[key] || "";
+}
+
+// Classify a reading into one of the 5 status keys using the crop's own optMin/optMax.
+// The 5-band logic:
+//   below (optMin - halfRange)     → dry
+//   below optMin                   → moderate
+//   between optMin and optMax      → optimal
+//   above optMax up to +halfRange  → wet
+//   above that                     → saturated
+// halfRange = (optMax - optMin) / 2  (minimum 5 to avoid zero-width bands)
+function classifyValue(value, optMin, optMax) {
+    const v = parseFloat(value);
+    if (isNaN(v)) return null;
+    const half = Math.max((optMax - optMin) / 2, 5);
+    if (v < optMin - half)  return "dry";
+    if (v < optMin)         return "moderate";
+    if (v <= optMax)        return "optimal";
+    if (v <= optMax + half) return "wet";
+    return "saturated";
+}
+
+// Render the interpretation div below a chart
+function renderVerbalInterpretation(containerId, sensorType, value, unit, optMin, optMax, cropName) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    if ((!value && value !== 0) || optMin === undefined || optMax === undefined) { container.innerHTML = ""; return; }
+
+    const key   = classifyValue(value, optMin, optMax);
+    if (!key) { container.innerHTML = ""; return; }
+    const style = STATUS_STYLES[key];
+    const msg   = getStatusMessage(sensorType, key, optMin, optMax, unit, cropName);
+    const crop  = cropName && cropName !== "Walang napiling pananim"
+        ? `Para sa <b>${cropName}</b>: Optimal na ${optMin}–${optMax}${unit}`
+        : "Pumili ng pananim para sa crop-specific na gabay";
+
+    container.innerHTML = `
+        <div style="margin-top:10px;padding:10px 12px;border-radius:8px;
+                    background:${style.bg};border-left:4px solid ${style.color};
+                    display:flex;align-items:flex-start;gap:8px;">
+            <span style="font-size:1.1rem;flex-shrink:0;line-height:1.4;">${style.icon}</span>
+            <div>
+                <div style="font-size:0.8rem;color:${style.color};font-weight:700;margin-bottom:2px;">
+                    ${style.label} — ${value}${unit}
+                </div>
+                <div style="font-size:0.78rem;color:#374151;line-height:1.45;">${msg}</div>
+                <div style="margin-top:5px;font-size:0.72rem;color:#6b7280;">${crop}</div>
+            </div>
+        </div>`;
+}
+
+// ==================== CHART RENDERING ====================
 function updateAllCharts() {
     const graphEmptyState = document.getElementById("graph-empty-state");
     const graphContainers = document.querySelectorAll("#history-graph .graph-container");
@@ -1420,38 +1528,180 @@ function updateAllCharts() {
     }
     if (graphEmptyState) graphEmptyState.classList.add("hidden");
     graphContainers.forEach((c) => { c.style.display = ""; });
-    const dataToGraph = [...latestHistoryData].slice(-15).reverse();
-    const labels = dataToGraph.map((d) => { const parts = formatTimestamp(d.timestamp || d.id).split(" "); return parts.length >= 2 ? parts.slice(1).join(" ") : parts[0]; });
-    renderEnhancedChart("soil-moisture-chart", "Pagkabasa ng Lupa (%)", labels, dataToGraph.map((d) => d.soilMoisture || d.moisture || 0), "#3498db", 0, 100, 10);
-    renderEnhancedChart("humidity-chart", "Halumigmig (%)", labels, dataToGraph.map((d) => d.humidity || 0), "#2980b9", 0, 100, 10);
-    renderEnhancedChart("temperature-chart", "Temperatura (°C)", labels, dataToGraph.map((d) => d.temperature || 0), "#e74c3c", 0, 50, 5);
-    renderEnhancedChart("ph-level-chart", "Antas ng pH", labels, dataToGraph.map((d) => d.pH || d.phLevel || 0), "#9b59b6", 0, 14, 2);
+
+    // For 7d and all: bucket by calendar day (daily averages), one point per day.
+    // For shorter ranges: keep the most recent 15 raw readings as before.
+    const useDailyBuckets = currentTimeRange === "7d" || currentTimeRange === "all";
+
+    let dataToGraph;
+    let labels;
+
+    if (useDailyBuckets) {
+        // Group all readings by "YYYY-MM-DD" and compute daily averages.
+        const buckets = {};
+        latestHistoryData.forEach((d) => {
+            const date = new Date(d.timestamp || 0);
+            const key = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`;
+            if (!buckets[key]) buckets[key] = { key, readings: [] };
+            buckets[key].readings.push(d);
+        });
+
+        const avg = (arr, fn) => {
+            const vals = arr.map(fn).filter(v => v !== null && v !== undefined && !isNaN(v));
+            return vals.length ? parseFloat((vals.reduce((a,b) => a+b, 0) / vals.length).toFixed(2)) : 0;
+        };
+
+        dataToGraph = Object.keys(buckets).sort().map((key) => {
+            const readings = buckets[key].readings;
+            const rep = readings[0];
+            return {
+                _dailyKey: key,
+                timestamp: rep.timestamp || 0,
+                soilMoisture: avg(readings, d => d.soilMoisture || d.moisture),
+                moisture:     avg(readings, d => d.soilMoisture || d.moisture),
+                humidity:     avg(readings, d => d.humidity),
+                temperature:  avg(readings, d => d.temperature),
+                pH:           avg(readings, d => d.pH || d.phLevel),
+                phLevel:      avg(readings, d => d.pH || d.phLevel),
+            };
+        });
+
+        // Label each bucket as "May 3" etc.
+        labels = dataToGraph.map((d) => {
+            const date = new Date(d.timestamp);
+            return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(date);
+        });
+    } else {
+        dataToGraph = [...latestHistoryData].slice(-15).reverse();
+        // Smart time labels: show "Mon DD, HH:MM AM/PM" only when the calendar date
+        // changes relative to the previous point; otherwise show just "HH:MM AM/PM".
+        labels = dataToGraph.map((d, i) => {
+            const ts = d.timestamp || d.id;
+            const date = new Date(ts);
+            const timeStr = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", hour12: true }).format(date);
+            const dateKey = `${date.getMonth()}-${date.getDate()}`;
+            const prevDate = i > 0 ? new Date(dataToGraph[i - 1].timestamp || dataToGraph[i - 1].id) : null;
+            const prevKey  = prevDate ? `${prevDate.getMonth()}-${prevDate.getDate()}` : null;
+            if (i === 0 || dateKey !== prevKey) {
+                const dateStr = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(date);
+                return dateStr + "\n" + timeStr;
+            }
+            return timeStr;
+        });
+    }
+
+    // Pull thresholds from the currently selected crop (falls back to null = no lines)
+    const crop     = allCropData[currentCropKey] || null;
+    const cropName = crop?.name || "Walang napiling pananim";
+
+    const moistOpt = crop?.moisture    || null;
+    const humOpt   = crop?.humidity    || null;
+    const tempOpt  = crop?.temperature || null;
+    const phOpt    = crop?.ph          || null;
+
+    const moistData = dataToGraph.map((d) => d.soilMoisture || d.moisture || 0);
+    const humData   = dataToGraph.map((d) => d.humidity || 0);
+    const tempData  = dataToGraph.map((d) => d.temperature || 0);
+    const phData    = dataToGraph.map((d) => d.pH || d.phLevel || 0);
+
+    renderEnhancedChart("soil-moisture-chart", "Pagkabasa ng Lupa (%)", labels, moistData, "#3498db", 0, 100, 10, moistOpt);
+    renderEnhancedChart("humidity-chart",      "Halumigmig (%)",        labels, humData,   "#2980b9", 0, 100, 10, humOpt);
+    renderEnhancedChart("temperature-chart",   "Temperatura (°C)",      labels, tempData,  "#e74c3c", 0, 50,  5,  tempOpt);
+    renderEnhancedChart("ph-level-chart",      "Antas ng pH",           labels, phData,    "#9b59b6", 0, 14,  2,  phOpt);
+
+    // Verbal interpretation — use the most recent reading
+    const latest = dataToGraph[dataToGraph.length - 1] || {};
+    if (moistOpt) renderVerbalInterpretation("moisture-interpretation",    "moisture",    latest.soilMoisture || latest.moisture || 0, "%",  moistOpt.min, moistOpt.max, cropName);
+    if (humOpt)   renderVerbalInterpretation("humidity-interpretation",    "humidity",    latest.humidity || 0,                         "%",  humOpt.min,   humOpt.max,   cropName);
+    if (tempOpt)  renderVerbalInterpretation("temperature-interpretation", "temperature", latest.temperature || 0,                      "°C", tempOpt.min,  tempOpt.max,  cropName);
+    if (phOpt)    renderVerbalInterpretation("ph-interpretation",          "ph",          latest.pH || latest.phLevel || 0,             "",   phOpt.min,    phOpt.max,    cropName);
 }
 
-function renderEnhancedChart(canvasId, label, labels, data, color, yMin, yMax, yStep) {
+function renderEnhancedChart(canvasId, label, labels, data, color, yMin, yMax, yStep, optRange) {
     const ctxElement = document.getElementById(canvasId);
     if (!ctxElement) return;
     const ctx = ctxElement.getContext("2d");
     if (chartInstances[canvasId]) { chartInstances[canvasId].destroy(); }
+
+    const unit   = label.includes("°C") ? "°C" : label.includes("pH") ? "" : "%";
+    const hasOpt = optRange && optRange.min !== undefined && optRange.max !== undefined;
+    const optMin = hasOpt ? optRange.min : null;
+    const optMax = hasOpt ? optRange.max : null;
+
+    // Mainam padding: ensure the Y axis always shows the full optimal band.
+    // Expand yMin/yMax if the band would otherwise be clipped, with a small
+    // visual margin (10% of the original range) so the band never sits flush
+    // against the edge of the chart.
+    if (hasOpt) {
+        const margin = (yMax - yMin) * 0.10;
+        if (optMin < yMin + margin) yMin = Math.max(0, Math.floor(optMin - margin));
+        if (optMax > yMax - margin) yMax = Math.ceil(optMax + margin);
+    }
+
+    // Dataset indices when hasOpt:
+    //   0 — sensor data line
+    //   1 — Mainam (Optimal) zone lower boundary (invisible, used for fill target)
+    //   2 — Mainam (Optimal) zone upper boundary (filled band between 1 & 2)
+
+    // Color each data point by its status classification
+    const pointColors = data.map((v) => {
+        if (!hasOpt) return color;
+        const key = classifyValue(v, optMin, optMax);
+        return STATUS_STYLES[key]?.color || color;
+    });
+
+    // Dataset 0 — sensor line
+    const datasets = [{
+        label: label,
+        data,
+        backgroundColor: color + "22",
+        borderColor: color,
+        borderWidth: 2.5,
+        pointBackgroundColor: pointColors,
+        pointBorderColor: "#fff",
+        pointBorderWidth: 2,
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        fill: true,
+        tension: 0.4,
+        order: 1,
+    }];
+
+    if (hasOpt) {
+        // Dataset 1 — Mainam zone lower boundary (invisible line at optMin, fills up to dataset 2)
+        datasets.push({
+            label: `Mainam (Optimal): ${optMin}–${optMax}${unit}`,
+            data: Array(labels.length).fill(optMin),
+            borderColor: "rgba(39,103,73,0.55)",
+            backgroundColor: "rgba(39,103,73,0.12)",
+            borderWidth: 1.5,
+            borderDash: [4, 4],
+            pointRadius: 0,
+            pointHoverRadius: 0,
+            fill: "+1",   // fills up to dataset 2
+            tension: 0,
+            order: 3,
+        });
+
+        // Dataset 2 — Mainam zone upper boundary (invisible line at optMax)
+        datasets.push({
+            label: `__mainam_top__`,  // hidden from legend
+            data: Array(labels.length).fill(optMax),
+            borderColor: "rgba(39,103,73,0.55)",
+            backgroundColor: "transparent",
+            borderWidth: 1.5,
+            borderDash: [4, 4],
+            pointRadius: 0,
+            pointHoverRadius: 0,
+            fill: false,
+            tension: 0,
+            order: 2,
+        });
+    }
+
     chartInstances[canvasId] = new Chart(ctx, {
         type: "line",
-        data: {
-            labels,
-            datasets: [{
-                label,
-                data,
-                backgroundColor: color + "22",
-                borderColor: color,
-                borderWidth: 2.5,
-                pointBackgroundColor: color,
-                pointBorderColor: "#fff",
-                pointBorderWidth: 2,
-                pointRadius: 4,
-                pointHoverRadius: 6,
-                fill: true,
-                tension: 0.4,
-            }]
-        },
+        data: { labels, datasets },
         options: {
             responsive: true,
             maintainAspectRatio: false,
@@ -1459,24 +1709,87 @@ function renderEnhancedChart(canvasId, label, labels, data, color, yMin, yMax, y
                 y: {
                     min: yMin, max: yMax, beginAtZero: false,
                     grid: { color: "rgba(0,0,0,0.05)" },
-                    ticks: { stepSize: yStep, color: "#6b7280", callback: (v) => v + (label.includes("°C") ? "°C" : label.includes("pH") ? "" : "%") },
-                    title: { display: true, text: "Value", color: "#374151" }
+                    ticks: { stepSize: yStep, color: "#6b7280", callback: (v) => v + unit },
+                    title: { display: true, text: unit ? `Halaga (${unit})` : "Halaga", color: "#374151", font: { size: 11 } },
                 },
                 x: {
                     grid: { display: false },
-                    ticks: { color: "#6b7280", maxRotation: 45, minRotation: 45 },
-                    title: { display: true, text: "Oras", color: "#374151" }
-                }
+                    ticks: { color: "#6b7280", maxRotation: 30, minRotation: 0, autoSkip: true, maxTicksLimit: 8, font: { size: 10.5 } },
+                    title: { display: true, text: "Oras", color: "#374151" },
+                },
             },
             plugins: {
-                legend: { display: false },
-                title: { display: true, text: label, font: { size: 16, weight: "bold" }, color: "#1f2937", padding: { bottom: 15, top: 5 } },
+                legend: {
+                    display: true,
+                    position: "bottom",
+                    labels: {
+                        padding: 14,
+                        font: { size: 11 },
+                        color: "#374151",
+                        usePointStyle: true,
+                        filter: (item) => !item.text.startsWith("__"),  // hide internal datasets
+                        generateLabels: (chart) => {
+                            const items = [];
+
+                            // — Sensor data line
+                            items.push({
+                                text: label,
+                                fillStyle: color + "44",
+                                strokeStyle: color,
+                                lineWidth: 2.5,
+                                pointStyle: "line",
+                                hidden: !chart.isDatasetVisible(0),
+                                datasetIndex: 0,
+                            });
+
+                            if (hasOpt) {
+                                // — Mainam/Optimal zone
+                                items.push({
+                                    text: `Mainam (Optimal): ${optMin}–${optMax}${unit}`,
+                                    fillStyle: "rgba(39,103,73,0.20)",
+                                    strokeStyle: "rgba(39,103,73,0.55)",
+                                    lineWidth: 1.5,
+                                    pointStyle: "rect",
+                                    hidden: !chart.isDatasetVisible(1),
+                                    datasetIndex: 1,
+                                });
+                            }
+
+                            return items;
+                        },
+                    },
+                    onClick: (e, item, legend) => {
+                        const ci = legend.chart;
+                        const idx = item.datasetIndex;
+                        if (idx === 0) { ci.isDatasetVisible(0) ? ci.hide(0) : ci.show(0); }
+                    },
+                },
+                title: {
+                    display: true,
+                    text: label,
+                    font: { size: 15, weight: "bold" },
+                    color: "#1f2937",
+                    padding: { bottom: 10, top: 5 },
+                },
                 tooltip: {
-                    backgroundColor: "rgba(0,0,0,0.8)", borderColor: color, borderWidth: 2,
-                    callbacks: { label: (context) => `${label}: ${context.parsed.y.toFixed(1)}${label.includes("°C") ? "°C" : label.includes("pH") ? "" : "%"}` }
-                }
-            }
-        }
+                    backgroundColor: "rgba(0,0,0,0.82)",
+                    borderColor: color,
+                    borderWidth: 2,
+                    filter: (item) => item.datasetIndex === 0,  // only show tooltip for sensor line
+                    callbacks: {
+                        label: (context) => {
+                            const v = context.parsed.y.toFixed(1);
+                            if (context.datasetIndex === 0 && hasOpt) {
+                                const key    = classifyValue(context.parsed.y, optMin, optMax);
+                                const status = STATUS_STYLES[key]?.label || "";
+                                return `${label}: ${v}${unit}  •  ${status}`;
+                            }
+                            return `${label}: ${v}${unit}`;
+                        },
+                    },
+                },
+            },
+        },
     });
 }
 
