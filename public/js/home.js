@@ -437,6 +437,70 @@ function checkAndSendSensorAlerts(sensorData) {
     });
 }
 
+// ==================== VERBAL TAG HELPERS ====================
+function getShortVerbalTag(sensorType, value, optMin, optMax) {
+    if (value === "--" || value === null || value === undefined) return null;
+    const v = parseFloat(value);
+    if (isNaN(v)) return null;
+
+    const half = Math.max((optMax - optMin) / 2, 5);
+    let level;
+    if (v < optMin - half)       level = "very_low";
+    else if (v < optMin)         level = "low";
+    else if (v <= optMax)        level = "ok";
+    else if (v <= optMax + half) level = "high";
+    else                         level = "very_high";
+
+    const tags = {
+        temperature: {
+            very_low:  ["danger", "Sobrang lamig. Maaaring matigil ang paglaki ng pananim."],
+            low:       ["warn",   "Medyo malamig pa. I-monitor ang pananim."],
+            ok:        ["good",   "Mainam ang temperatura. Perpekto para sa paglago."],
+            high:      ["warn",   "Medyo mainit na. Maaaring mag-stress ang pananim."],
+            very_high: ["danger", "Sobrang init. Mataas na panganib ng heat stress."],
+        },
+        moisture: {
+            very_low:  ["danger", "Sobrang tuyo ng lupa. Kailangan agad ng pagdilig."],
+            low:       ["warn",   "Medyo tuyo pa ang lupa. Isaalang-alang ang pagdilig."],
+            ok:        ["good",   "Mainam ang pagkabasa. Angkop para sa malusog na paglago."],
+            high:      ["warn",   "Medyo basa na ang lupa. Bantayan at bawasan ang dilig."],
+            very_high: ["danger", "Sobrang basa ng lupa. Maaaring mabulok ang ugat."],
+        },
+        humidity: {
+            very_low:  ["danger", "Sobrang tuyo ng hangin. Maaaring malanta ang pananim."],
+            low:       ["warn",   "Medyo tuyo ang hangin. Bantayan—maaaring matuyo ang mga dahon."],
+            ok:        ["good",   "Mainam ang halumigmig. Angkop para sa aktibong paglago."],
+            high:      ["warn",   "Medyo mataas ang halumigmig. Bantayan ang sakit ng pananim."],
+            very_high: ["danger", "Sobrang halumigmig. Mataas ang panganib ng amag at sakit."],
+        },
+        ph: {
+            very_low:  ["danger", "Masyadong maasim. Nahihirapan ang pananim na masipsip ang sustansya."],
+            low:       ["warn",   "Bahagyang maasim. Isaalang-alang ang pagwawasto ng lupa."],
+            ok:        ["good",   "Mainam ang pH. Madaling masipsip ng pananim ang mga sustansya."],
+            high:      ["warn",   "Bahagyang alkaline. Maaaring mahirapan sa ilang sustansya."],
+            very_high: ["danger", "Masyadong alkaline. Kailangan ng soil amendment."],
+        },
+    };
+
+    return tags[sensorType]?.[level] || null;
+}
+
+function renderCardVerbalTag(elementId, sensorType, value, optMin, optMax) {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+    if (optMin === undefined || optMax === undefined || (optMin === 0 && optMax === 0)) {
+        el.innerHTML = "";
+        el.style.display = "none";
+        return;
+    }
+    const result = getShortVerbalTag(sensorType, value, optMin, optMax);
+    if (!result) { el.innerHTML = ""; el.style.display = "none"; return; }
+    const [type, msg] = result;
+    el.style.display = "flex";
+    el.className = `card-verbal-tag tag-${type}`;
+    el.innerHTML = `<span class="tag-dot"></span><span>${msg}</span>`;
+}
+
 function updateCurrentReadings(sensorData) {
     if (!sensorData) return;
     const currentTime = Date.now();
@@ -458,8 +522,19 @@ function updateCurrentReadings(sensorData) {
         updateStatusElement("status-humidity-text", humidity, currentCrop.humidity.min, currentCrop.humidity.max, "%");
         updateStatusElement("status-ph-text", ph, currentCrop.ph.min, currentCrop.ph.max, "pH");
         updateStatusElement("status-moisture-text", moisture, currentCrop.moisture.min, currentCrop.moisture.max, "%");
+
+        // ── Verbal tags on each card ──
+        renderCardVerbalTag("verbal-temp",     "temperature", temp,     currentCrop.temperature.min, currentCrop.temperature.max);
+        renderCardVerbalTag("verbal-moisture", "moisture",    moisture, currentCrop.moisture.min,    currentCrop.moisture.max);
+        renderCardVerbalTag("verbal-humidity", "humidity",    humidity, currentCrop.humidity.min,    currentCrop.humidity.max);
+        renderCardVerbalTag("verbal-ph",       "ph",          ph,       currentCrop.ph.min,          currentCrop.ph.max);
     } else {
         document.querySelectorAll(".status-message").forEach((el) => { el.textContent = "Pumili ng Pananim"; el.className = "status-message status-warning"; });
+        // Hide verbal tags when no crop selected
+        ["verbal-temp", "verbal-moisture", "verbal-humidity", "verbal-ph"].forEach((id) => {
+            const el = document.getElementById(id);
+            if (el) { el.innerHTML = ""; el.style.display = "none"; }
+        });
     }
     const isLight = light === "LIGHT" || light === "Light" || light == 1;
     const lightText = isLight ? "Maliwanag" : "Madilim";
@@ -470,7 +545,7 @@ function updateCurrentReadings(sensorData) {
     if (lightStatEl) { lightStatEl.textContent = lightText; lightStatEl.className = `status-message ${lightClass}`; }
     updateSoilMoistureStatus(moisture);
     checkAndSendSensorAlerts(sensorData);
-    }
+}
 
 function updateStatusElement(elementId, value, min, max, unit) {
     const element = document.getElementById(elementId);
@@ -529,8 +604,6 @@ function setCrop(cropKey, cropInfo) {
 function initializeEventListeners() { initializeModals(); initializeDeviceManager(); }
 
 // ==================== DEVICE MANAGER ====================
-// Replace these functions in home.js
-
 function initializeDeviceManager() {
     const addDeviceBtn = document.getElementById("addDeviceBtn");
     if (addDeviceBtn) addDeviceBtn.addEventListener("click", openDeviceModal);
@@ -630,7 +703,6 @@ function updateDeviceBadge(deviceId, deviceName) {
 }
 
 // ==================== CONNECT DEVICE ====================
-// Fields: Device ID (required) + Device Name (optional). No location.
 async function connectDevice() {
     clearDeviceError();
     const user = await getResolvedUser();
@@ -638,7 +710,7 @@ async function connectDevice() {
     const idInput = document.getElementById("deviceIdInput");
     const nameInput = document.getElementById("deviceNameInput");
     const deviceId = idInput?.value.trim();
-    const deviceName = nameInput?.value.trim() || "";   // optional
+    const deviceName = nameInput?.value.trim() || "";
     if (!deviceId) { showDeviceError("Mangyaring ilagay ang Device ID."); return; }
     const confirmBtn = document.getElementById("confirmDeviceBtn");
     if (confirmBtn) { confirmBtn.disabled = true; confirmBtn.textContent = "Nagko-connect..."; }
@@ -665,7 +737,6 @@ async function connectDevice() {
             }
             await remove(ref(db, `devices/${oldDeviceId}`));
         }
-        // Save to users — deviceId + optional deviceName, no location
         const updatePayload = {
             deviceId,
             deviceAssignedAt: new Date().toISOString(),
@@ -675,7 +746,6 @@ async function connectDevice() {
 
         await update(ref(db, `users/${user.uid}`), updatePayload);
 
-        // Save to devices collection
         await set(ref(db, `devices/${deviceId}`), {
             assignedTo: user.uid,
             deviceName: deviceName || null,
@@ -1044,6 +1114,11 @@ async function listenToFirebaseData() {
 function showOfflineState() {
     ["current-temperature", "current-soil-moisture", "current-humidity", "current-ph-level", "light-status"].forEach((id) => { const el = document.getElementById(id); if (el) el.textContent = "--"; });
     ["status-temp-text", "status-moisture-text", "status-humidity-text", "status-ph-text", "status-light-text"].forEach((id) => { const el = document.getElementById(id); if (el) { el.textContent = "Offline"; el.style.color = "#e74c3c"; } });
+    // Hide verbal tags when offline
+    ["verbal-temp", "verbal-moisture", "verbal-humidity", "verbal-ph"].forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) { el.innerHTML = ""; el.style.display = "none"; }
+    });
     const sideStatus = document.getElementById("soil-moisture-status");
     if (sideStatus) sideStatus.textContent = "Offline";
 }
@@ -1261,7 +1336,6 @@ function hideLoadingState() {
     if (loadingDiv) loadingDiv.style.display = "none";
     if (emptyState) emptyState.remove();
     if (table) table.style.display = "table";
-    // Hide graph empty state and restore chart containers
     const graphEmptyState = document.getElementById("graph-empty-state");
     if (graphEmptyState) graphEmptyState.classList.add("hidden");
     const graphContainers = document.querySelectorAll("#history-graph .graph-container");
@@ -1278,13 +1352,11 @@ function showEmptyState(range) {
     let emptyState = historyTable.querySelector(".history-empty");
     if (!emptyState) { emptyState = document.createElement("div"); emptyState.className = "history-empty"; historyTable.appendChild(emptyState); }
     emptyState.innerHTML = `<i class="fas fa-database"></i><h3>Walang Nakuhang Data</h3><p>Walang natagpuang sensor readings ${messages[range] || "sa napiling oras"}.</p>`;
-    // Also update and show the graph empty state
     const graphEmptyState = document.getElementById("graph-empty-state");
     if (graphEmptyState) {
         graphEmptyState.querySelector("p").textContent = `Walang natagpuang sensor readings ${messages[range] || "sa napiling oras"}.`;
         graphEmptyState.classList.remove("hidden");
     }
-    // Hide the chart containers when there is no data
     const graphContainers = document.querySelectorAll("#history-graph .graph-container");
     graphContainers.forEach((c) => { c.style.display = "none"; });
 }
@@ -1411,12 +1483,7 @@ function showNotification(message, type) {
 }
 
 // ============================================================
-// STATUS COLORS  (hex values from image — DO NOT change)
-// .status-dry       bg:#fed7d7  color:#c53030
-// .status-moderate  bg:#feebcb  color:#dd6b20
-// .status-optimal   bg:#c6f6d5  color:#276749
-// .status-wet       bg:#bee3f8  color:#2c5aa0
-// .status-saturated bg:#e9d8fd  color:#6b46c1
+// STATUS COLORS
 // ============================================================
 const STATUS_STYLES = {
     dry:      { bg: "#fed7d7", color: "#c53030", label: "Tuyo (Dry)",           icon: "🔴" },
@@ -1426,11 +1493,6 @@ const STATUS_STYLES = {
     saturated:{ bg: "#e9d8fd", color: "#6b46c1", label: "Lubog (Saturated)",     icon: "🟣" },
 };
 
-// Build a verbal message dynamically using the crop's own thresholds so the
-// advice is always correct regardless of how high or low the optimal range is.
-// e.g. rice moisture optimal=80-100%: a reading of 95% is "Mainam", not "saturated/root rot".
-// All "too low / too high" messages reference the crop's actual min/max, not
-// hardcoded agronomic assumptions.
 function getStatusMessage(sensorType, key, optMin, optMax, unit, cropName) {
     const crop = cropName && cropName !== "Walang napiling pananim" ? cropName : "iyong pananim";
     const range = `${optMin}–${optMax}${unit}`;
@@ -1469,14 +1531,6 @@ function getStatusMessage(sensorType, key, optMin, optMax, unit, cropName) {
     return templates[sensorType]?.[key] || "";
 }
 
-// Classify a reading into one of the 5 status keys using the crop's own optMin/optMax.
-// The 5-band logic:
-//   below (optMin - halfRange)     → dry
-//   below optMin                   → moderate
-//   between optMin and optMax      → optimal
-//   above optMax up to +halfRange  → wet
-//   above that                     → saturated
-// halfRange = (optMax - optMin) / 2  (minimum 5 to avoid zero-width bands)
 function classifyValue(value, optMin, optMax) {
     const v = parseFloat(value);
     if (isNaN(v)) return null;
@@ -1488,7 +1542,6 @@ function classifyValue(value, optMin, optMax) {
     return "saturated";
 }
 
-// Render the interpretation div below a chart
 function renderVerbalInterpretation(containerId, sensorType, value, unit, optMin, optMax, cropName) {
     const container = document.getElementById(containerId);
     if (!container) return;
@@ -1529,15 +1582,12 @@ function updateAllCharts() {
     if (graphEmptyState) graphEmptyState.classList.add("hidden");
     graphContainers.forEach((c) => { c.style.display = ""; });
 
-    // For 7d and all: bucket by calendar day (daily averages), one point per day.
-    // For shorter ranges: keep the most recent 15 raw readings as before.
     const useDailyBuckets = currentTimeRange === "7d" || currentTimeRange === "all";
 
     let dataToGraph;
     let labels;
 
     if (useDailyBuckets) {
-        // Group all readings by "YYYY-MM-DD" and compute daily averages.
         const buckets = {};
         latestHistoryData.forEach((d) => {
             const date = new Date(d.timestamp || 0);
@@ -1566,15 +1616,12 @@ function updateAllCharts() {
             };
         });
 
-        // Label each bucket as "May 3" etc.
         labels = dataToGraph.map((d) => {
             const date = new Date(d.timestamp);
             return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(date);
         });
     } else {
         dataToGraph = [...latestHistoryData].slice(-15).reverse();
-        // Smart time labels: show "Mon DD, HH:MM AM/PM" only when the calendar date
-        // changes relative to the previous point; otherwise show just "HH:MM AM/PM".
         labels = dataToGraph.map((d, i) => {
             const ts = d.timestamp || d.id;
             const date = new Date(ts);
@@ -1590,7 +1637,6 @@ function updateAllCharts() {
         });
     }
 
-    // Pull thresholds from the currently selected crop (falls back to null = no lines)
     const crop     = allCropData[currentCropKey] || null;
     const cropName = crop?.name || "Walang napiling pananim";
 
@@ -1609,7 +1655,6 @@ function updateAllCharts() {
     renderEnhancedChart("temperature-chart",   "Temperatura (°C)",      labels, tempData,  "#e74c3c", 0, 50,  5,  tempOpt);
     renderEnhancedChart("ph-level-chart",      "Antas ng pH",           labels, phData,    "#9b59b6", 0, 14,  2,  phOpt);
 
-    // Verbal interpretation — use the most recent reading
     const latest = dataToGraph[dataToGraph.length - 1] || {};
     if (moistOpt) renderVerbalInterpretation("moisture-interpretation",    "moisture",    latest.soilMoisture || latest.moisture || 0, "%",  moistOpt.min, moistOpt.max, cropName);
     if (humOpt)   renderVerbalInterpretation("humidity-interpretation",    "humidity",    latest.humidity || 0,                         "%",  humOpt.min,   humOpt.max,   cropName);
@@ -1628,29 +1673,18 @@ function renderEnhancedChart(canvasId, label, labels, data, color, yMin, yMax, y
     const optMin = hasOpt ? optRange.min : null;
     const optMax = hasOpt ? optRange.max : null;
 
-    // Mainam padding: ensure the Y axis always shows the full optimal band.
-    // Expand yMin/yMax if the band would otherwise be clipped, with a small
-    // visual margin (10% of the original range) so the band never sits flush
-    // against the edge of the chart.
     if (hasOpt) {
         const margin = (yMax - yMin) * 0.10;
         if (optMin < yMin + margin) yMin = Math.max(0, Math.floor(optMin - margin));
         if (optMax > yMax - margin) yMax = Math.ceil(optMax + margin);
     }
 
-    // Dataset indices when hasOpt:
-    //   0 — sensor data line
-    //   1 — Mainam (Optimal) zone lower boundary (invisible, used for fill target)
-    //   2 — Mainam (Optimal) zone upper boundary (filled band between 1 & 2)
-
-    // Color each data point by its status classification
     const pointColors = data.map((v) => {
         if (!hasOpt) return color;
         const key = classifyValue(v, optMin, optMax);
         return STATUS_STYLES[key]?.color || color;
     });
 
-    // Dataset 0 — sensor line
     const datasets = [{
         label: label,
         data,
@@ -1668,7 +1702,6 @@ function renderEnhancedChart(canvasId, label, labels, data, color, yMin, yMax, y
     }];
 
     if (hasOpt) {
-        // Dataset 1 — Mainam zone lower boundary (invisible line at optMin, fills up to dataset 2)
         datasets.push({
             label: `Mainam (Optimal): ${optMin}–${optMax}${unit}`,
             data: Array(labels.length).fill(optMin),
@@ -1678,14 +1711,13 @@ function renderEnhancedChart(canvasId, label, labels, data, color, yMin, yMax, y
             borderDash: [4, 4],
             pointRadius: 0,
             pointHoverRadius: 0,
-            fill: "+1",   // fills up to dataset 2
+            fill: "+1",
             tension: 0,
             order: 3,
         });
 
-        // Dataset 2 — Mainam zone upper boundary (invisible line at optMax)
         datasets.push({
-            label: `__mainam_top__`,  // hidden from legend
+            label: `__mainam_top__`,
             data: Array(labels.length).fill(optMax),
             borderColor: "rgba(39,103,73,0.55)",
             backgroundColor: "transparent",
@@ -1727,11 +1759,9 @@ function renderEnhancedChart(canvasId, label, labels, data, color, yMin, yMax, y
                         font: { size: 11 },
                         color: "#374151",
                         usePointStyle: true,
-                        filter: (item) => !item.text.startsWith("__"),  // hide internal datasets
+                        filter: (item) => !item.text.startsWith("__"),
                         generateLabels: (chart) => {
                             const items = [];
-
-                            // — Sensor data line
                             items.push({
                                 text: label,
                                 fillStyle: color + "44",
@@ -1741,9 +1771,7 @@ function renderEnhancedChart(canvasId, label, labels, data, color, yMin, yMax, y
                                 hidden: !chart.isDatasetVisible(0),
                                 datasetIndex: 0,
                             });
-
                             if (hasOpt) {
-                                // — Mainam/Optimal zone
                                 items.push({
                                     text: `Mainam (Optimal): ${optMin}–${optMax}${unit}`,
                                     fillStyle: "rgba(39,103,73,0.20)",
@@ -1754,7 +1782,6 @@ function renderEnhancedChart(canvasId, label, labels, data, color, yMin, yMax, y
                                     datasetIndex: 1,
                                 });
                             }
-
                             return items;
                         },
                     },
@@ -1775,7 +1802,7 @@ function renderEnhancedChart(canvasId, label, labels, data, color, yMin, yMax, y
                     backgroundColor: "rgba(0,0,0,0.82)",
                     borderColor: color,
                     borderWidth: 2,
-                    filter: (item) => item.datasetIndex === 0,  // only show tooltip for sensor line
+                    filter: (item) => item.datasetIndex === 0,
                     callbacks: {
                         label: (context) => {
                             const v = context.parsed.y.toFixed(1);

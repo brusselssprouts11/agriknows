@@ -491,37 +491,49 @@
                         <div class="reading-header">
                             <i class="fas fa-thermometer-half reading-icon temperature"></i>
                             <h3>Temperatura</h3>
+                    
                         </div>
                         <div class="value" id="current-temperature">-- °C</div>
                         <div id="status-temp-text" class="status-message">Loading...</div>
                         <div class="optimal" id="tempOptimal">Optimal: --</div>
+                            <!-- Temperatura card — add before closing </div> -->
+<div id="verbal-temp" class="card-verbal-tag" style="display:none;"></div>
                     </div>
                     <div class="reading-card">
                         <div class="reading-header">
                             <i class="fas fa-tint reading-icon moisture"></i>
                             <h3>Pagkabasa ng Lupa</h3>
+                  
                         </div>
                         <div class="value" id="current-soil-moisture">-- %</div>
                         <div id="status-moisture-text" class="status-message">Loading...</div>
                         <div class="optimal" id="moistureOptimal">Optimal: --</div>
+                                  <!-- Pagkabasa ng Lupa card -->
+<div id="verbal-moisture" class="card-verbal-tag" style="display:none;"></div>
                     </div>
                     <div class="reading-card">
                         <div class="reading-header">
                             <i class="fas fa-flask reading-icon ph"></i>
                             <h3>Antas ng pH</h3>
+                            
                         </div>
                         <div class="value" id="current-ph-level">-- pH</div>
                         <div id="status-ph-text" class="status-message">Loading...</div>
                         <div class="optimal" id="phOptimal">Optimal: --</div>
+                        <!-- Antas ng pH card -->
+<div id="verbal-ph" class="card-verbal-tag" style="display:none;"></div>
                     </div>
                     <div class="reading-card">
                         <div class="reading-header">
                             <i class="fas fa-cloud reading-icon humidity"></i>
                             <h3>Halumigmig</h3>
+                           
                         </div>
                         <div class="value" id="current-humidity">--%</div>
                         <div id="status-humidity-text" class="status-message">Loading...</div>
                         <div class="optimal" id="humidityOptimal">Optimal: --</div>
+                         <!-- Halumigmig card -->
+<div id="verbal-humidity" class="card-verbal-tag" style="display:none;"></div>
                     </div>
                     <div class="reading-card">
                         <div class="reading-header">

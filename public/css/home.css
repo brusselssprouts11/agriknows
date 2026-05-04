@@ -622,6 +622,30 @@ input:checked + .slider:before { transform: translateX(26px); }
 .slider.round { border-radius: 40px; }
 .slider.round:before { border-radius: 50%; }
 
+.card-verbal-tag {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    margin-top: 6px;
+    padding: 7px 10px;
+    border-radius: 8px;
+    font-size: 12px;
+    line-height: 1.45;
+}
+.tag-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 3px;
+}
+.tag-good    { background: #EAF3DE; color: #27500A; }
+.tag-good .tag-dot    { background: #639922; }
+.tag-warn    { background: #FAEEDA; color: #633806; }
+.tag-warn .tag-dot    { background: #EF9F27; }
+.tag-danger  { background: #FCEBEB; color: #791F1F; }
+.tag-danger .tag-dot  { background: #E24B4A; }
+
 /*---------------- Modals ----------------*/
 .modal {
     display: none;
